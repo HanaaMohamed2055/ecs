@@ -1,0 +1,3 @@
+[submodule "deps/cpprelude"]
+	path = deps/cpprelude
+	url = git@github.com:Symbyo360/cpprelude.git

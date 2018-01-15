@@ -2,7 +2,7 @@ project "ecs"
 	kind "SharedLib"
 	language "C++"
 
-	files {"include/**.h"}
+	files {"include/**.h", "src/**.cpp"}
 
 	includedirs {
 		"include/",

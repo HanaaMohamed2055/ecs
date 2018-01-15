@@ -7,7 +7,8 @@ project "scratch"
 	files {"**.cpp"}
 
 	includedirs {
-		cpprelude_path .. "/include/"
+		ecs_path .. "/include",
+		cpprelude_path .. "/include",
 	}
 
 	links {"cpprelude"}

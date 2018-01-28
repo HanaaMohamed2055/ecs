@@ -5,36 +5,42 @@
 #include "cpprelude/dynamic_array.h"
 #include "cpprelude/stack_array.h"
 
+#define INVALID_ENTITY_ID 0
+
 using namespace cpprelude;
 
 namespace ecs 
 {
-	using id = u32;
+	using entity_id = u32;
+	using component_id = u16;
 
 	struct entity
 	{	
-		id entity_id;
-		bool  removed;
-		u32 component_count;
+		entity_id eid;
+		bool  is_valid;
+		u8 component_count; // every entity should register to no more than 256 components
 
 		entity()
 		{
-			entity_id = 0;
-			removed = false;
+			eid = 0;
+			is_valid = true;
 			component_count = 0;
 		}
 
-		entity(id eid)
+		entity(entity_id eid)
 		{
-			entity_id = eid;
-			removed = false;
+			eid = eid;
+			is_valid = true;
 			component_count = 0;
 		}
 
 		//this will act as a signal for the entity manager 
 		//to destroy entity
 		//deferred update???
-		void remove(bool immediate = false) {};
+		void remove(bool immediate = false) 
+		{
+			is_valid = false;
+		}
 	};	
 
 	/** A component is a wrapper for whatever kind of data.
@@ -46,11 +52,15 @@ namespace ecs
 	{
 		using component_type = T;
 		
+		// component id must be unique within each entity		
+		component_id cid;
+		
 		component_type* data;
 
-		component(){};
-
-		component(const component_type* data){};
+		component(component_type* component_data)
+		{
+			data = component_data;
+		}
 
 	};
 
@@ -60,13 +70,12 @@ namespace ecs
 	*/
 	struct entity_component_manager
 	{
-		
 		dynamic_array<entity> entities_index;
-		stack_array<id> free_places;
+		stack_array<entity_id> free_places;
 
-		entity create(){
-
-			id new_id;
+		entity* create()
+		{
+			entity_id new_id;
 
 			if(free_places.empty())
 				new_id = entities_index.count() + 1;
@@ -77,25 +86,38 @@ namespace ecs
 				free_places.pop();
 			}	
 
-			entity e(new_id);
-			entities_index.insert_back(new_id);
-			return e;
+			entities_index.emplace_back(new_id);
+			return &entities_index[entities_index.count() - 1];
 		}	
 
 		//bool valid(id entity_id){return true;}
 
 		template<typename T>
-		void register_component(id entity_id, component<T> c){
+		void register_component(entity_id eid, component<T> c)
+		{
 
 		}
 	
 		template<typename return_type>
-		void apply(std::function<return_type ()> func){};
+		void apply(std::function<return_type ()> func)
+		{}
 
 		template<typename component_type, typename return_type>
-		void apply_on_type(std::function<return_type ()> func){};
+		void apply_on_type(std::function<return_type ()> func)
+		{}
 
-		void destroy(){};
+		void destroy()
+		{
+			for(size_t i = 0; i < entities_index.count(); ++i)
+			{
+				if(!entities_index[i].is_valid)
+				{
+					free_places.push(entities_index[i].eid);	
+					std::swap(entities_index[i], entities_index[entities_index.count() - 1]);
+					entities_index.remove_back(1);
+				}
+			}
+		}
 
 	};
 

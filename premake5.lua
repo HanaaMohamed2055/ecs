@@ -22,3 +22,4 @@ workspace "ecs"
 	include "ecs.lua"
 	include "scratch/scratch.lua"
 	include (cpprelude_path .. "/cpprelude.lua")
+	include "unittest/unittest.lua"

@@ -1,4 +1,6 @@
+[submodule "unittest/deps/Catch2"]
+	path = unittest/deps/Catch2
+	url = git@github.com:catchorg/Catch2.git
 [submodule "deps/cpprelude"]
 	path = deps/cpprelude
 	url = git@github.com:Symbyo360/cpprelude.git
-	branch = release

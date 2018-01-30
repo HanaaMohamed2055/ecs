@@ -1,14 +1,19 @@
 # pragma once
 
 #include <functional>
+#include <utility>
+#include <new>
 
 #include "cpprelude/defines.h"
 #include "cpprelude/dynamic_array.h"
 #include "cpprelude/queue_array.h"
+#include "cpprelude/memory.h"
+#include "cpprelude/platform.h"
 #include "cpprelude/hash_array.h"
 #include "cpprelude/string.h"
 
 #define INVALID_ID 0
+#define PREALLOCATED_COUNT 256
 
 using namespace cpprelude;
 
@@ -61,17 +66,22 @@ namespace ecs
 		component_id cid;
 		entity_id eid;
 
-		component_type* data;
+		component_type data;
 
 		component()
 			:cid(INVALID_ID), eid(INVALID_ID), data(nullptr)
 		{}
 
 		component(component_type* component_data)
-			:cid(INVALID_ID), eid(INVALID_ID), data(component_data)
+			:cid(INVALID_ID), eid(INVALID_ID), data(*component_data)
 		{}
 
 		component(component_id id, component_type* component_data)
+			:cid(id), eid(INVALID_ID), data(*component_data)
+		{}
+
+
+		component(component_id id, component_type component_data)
 			:cid(id), eid(INVALID_ID), data(component_data)
 		{}
 	};
@@ -87,10 +97,8 @@ namespace ecs
 		dynamic_array<entity> entities_index;
 		queue_array<entity_id> free_places;
 		hash_array<entity_id, dynamic_array<void*>> entities_components;
-		
-		/*template<typename T>
-		hash_array <cpprelude::string, dynamic_array<component<T>>> types_map;*/
-
+		hash_array <cpprelude::string, dynamic_array<slice<void>>> types_map;
+	
 		entity* create()
 		{
 			entity_id new_id;
@@ -111,16 +119,23 @@ namespace ecs
 		
 		// Array of structures is enabled by default
 		template<typename T>
-		void bind(entity e, component<T>& c, bool AoS = true)
+		bool bind(entity* e, component<T>& c)
 		{
-			c.eid = e.eid;
-			c.cid = e.component_count + 1;
-			// here will lie some code that facilitates getting all components for a certain entity
-			//ideally, we should use a hash array that  
-			entities_components[e.eid].insert_back(&c);
-
+			if (c.eid != INVALID_ID) 
+				return false;
+			c.eid = e->eid;
+			c.cid = ++(e->component_count);  
+			entities_components[e->eid].insert_back(&c);
+			return true;
 		}
-	
+
+		template<typename T>
+		component<T>* add_component(component_id id, T data, bool aos = false)
+		{
+			
+			return nullptr;
+		}
+
 		template<typename return_type>
 		void apply(std::function<return_type ()> func)
 		{}

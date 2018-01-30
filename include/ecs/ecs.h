@@ -93,7 +93,6 @@ namespace ecs
 	//this should take memory_context whatever which allocator has given  it -> resource manager
 	struct entity_component_manager
 	{
-		//Allocator* _allocator;
 		dynamic_array<entity> entities_index;
 		queue_array<entity_id> free_places;
 		hash_array<entity_id, dynamic_array<void*>> entities_components;

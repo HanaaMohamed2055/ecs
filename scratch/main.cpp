@@ -1,24 +1,24 @@
 #include <cpprelude/defines.h>
 #include <cpprelude/allocator.h>
 #include <ecs/ecs.h>
+#include <string>
 
 using namespace ecs;
 
 int main()
 {	
 
-	std::cout << (unsigned)((2 << 31) - 1) << std::endl;
-	u32 width = 90;
-	r64 height = 10.45;
 	entity_component_manager em;
-	component<u32> cx(&width);
-	component<r64> cy(&height);
-	auto e = em.create();
-	em.bind(e->eid, cx);
-	em.bind(e->eid, cy);
-
-
-	//auto q = reinterpret_cast<component<int>*>(e);
-	//std::cout << *(q->data) << std::endl;
+	auto cptr =  em.add_component<u32>(3, 34);
+	std::cout << sizeof(*cptr) * 512 << std::endl;
+	auto cptr2 = em.add_component<u32>(2, 123);
+	auto cptr3 = em.add_component<std::string>(23, "hello");
+	std::cout << sizeof(*cptr3) * 512 << std::endl;
+	std::cout << cptr->data << std::endl;
+	std::cout << cptr << std::endl;
+	std::cout << cptr2->data << std::endl;
+	std::cout << cptr2 << std::endl;
+	std::cout << cptr3->data << std::endl;
+	std::cout << cptr3 << std:: endl;
 	return 0;
 }

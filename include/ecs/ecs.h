@@ -13,7 +13,7 @@
 #include "cpprelude/string.h"
 
 #define INVALID_ID 0
-#define PREALLOCATED_COUNT 256
+#define PREALLOCATED_COUNT 512
 
 using namespace cpprelude;
 
@@ -52,6 +52,7 @@ namespace ecs
 			is_valid = false;
 		}
 	};	
+	
 
 	/** A component is a wrapper for whatever kind of data.
 	* it can only be registered to by a single entity
@@ -69,7 +70,7 @@ namespace ecs
 		component_type data;
 
 		component()
-			:cid(INVALID_ID), eid(INVALID_ID), data(nullptr)
+			:cid(INVALID_ID), eid(INVALID_ID)
 		{}
 
 		component(component_type* component_data)
@@ -84,7 +85,11 @@ namespace ecs
 		component(component_id id, component_type component_data)
 			:cid(id), eid(INVALID_ID), data(component_data)
 		{}
+
+		// component(component&&) noexcept = default;
 	};
+
+
 
 	/**The entity manager (so far) is responsible for creating, destroying entities,
 	*reusing places of destroyed entities and applying a certain action
@@ -96,8 +101,13 @@ namespace ecs
 		dynamic_array<entity> entities_index;
 		queue_array<entity_id> free_places;
 		hash_array<entity_id, dynamic_array<void*>> entities_components;
-		hash_array <cpprelude::string, dynamic_array<slice<void>>> types_map;
-	
+		hash_array <cpprelude::string, std::pair<void*, int>> types_components_map;
+		memory_context* _context;
+
+		entity_component_manager(memory_context* context = platform->global_memory)
+			:_context(context)
+		{}
+
 		entity* create()
 		{
 			entity_id new_id;
@@ -128,10 +138,26 @@ namespace ecs
 			return true;
 		}
 
+		//default behaviour is structure of arrays
 		template<typename T>
-		component<T>* add_component(component_id id, T data, bool aos = false)
+		component<T>* add_component(component_id id, T data, bool aos = false, bool prealocation = true)
 		{
-			
+			auto key = typeid(T).name();
+
+			if (!aos)
+			{
+				if (types_components_map.lookup(key) == types_components_map.end())
+				{
+					component<T>* ptr = new component<T> [PREALLOCATED_COUNT];
+					void* new_type_ptr = (void*)ptr;
+					types_components_map[key] = std::make_pair(new_type_ptr, 0);
+				}
+
+				auto data_ptr = reinterpret_cast<component<T>*>(types_components_map[key].first);
+				data_ptr[types_components_map[key].second++] = component<T>(id, data);
+				return &data_ptr[types_components_map[key].second - 1];
+			}
+
 			return nullptr;
 		}
 

@@ -101,7 +101,7 @@ namespace ecs
 		dynamic_array<entity> entities_index;
 		queue_array<entity_id> free_places;
 		hash_array<entity_id, dynamic_array<void*>> entities_components;
-		hash_array <cpprelude::string, std::pair<void*, int>> types_components_map;
+		hash_array <cpprelude::string, std::pair<dynamic_array<void*>, usize>> types_components_map;
 		memory_context* _context;
 
 		entity_component_manager(memory_context* context = platform->global_memory)
@@ -146,21 +146,28 @@ namespace ecs
 
 			if (!aos)
 			{
-				if (types_components_map.lookup(key) == types_components_map.end())
+
+				if (types_components_map.lookup(key) == types_components_map.end() 
+					|| (types_components_map.lookup(key) != types_components_map.end() && types_components_map[key].second == PREALLOCATED_COUNT - 1))
 				{
-					component<T>* ptr = new component<T> [PREALLOCATED_COUNT];
-					void* new_type_ptr = (void*)ptr;
-					types_components_map[key] = std::make_pair(new_type_ptr, 0);
+
+					auto slice_ptr = new slice<component<T>>(_context->alloc<component<T>>(static_cast<usize>(PREALLOCATED_COUNT)));
+					void* new_type_ptr = (void*)slice_ptr;
+					types_components_map[key].first.insert_back(new_type_ptr);
+					types_components_map[key].second = 0;
 				}
 
-				auto data_ptr = reinterpret_cast<component<T>*>(types_components_map[key].first);
-				data_ptr[types_components_map[key].second++] = component<T>(id, data);
+				auto data_ptr = *reinterpret_cast<slice<component<T>>*>(*(types_components_map[key].first.back()));
+				new (&data_ptr[types_components_map[key].second++]) component<T>(id, data); 
 				return &data_ptr[types_components_map[key].second - 1];
 			}
+			
 
 			return nullptr;
 		}
 
+		
+		
 		template<typename return_type>
 		void apply(std::function<return_type ()> func)
 		{}
@@ -182,6 +189,13 @@ namespace ecs
 			}
 		}
 
+		void free_all()
+		{
+			for (auto it = types_components_map.begin(); it != types_components_map.end(); ++it)
+			{
+				
+			}
+		}
 	};
 
 }

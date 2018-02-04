@@ -7,21 +7,28 @@ using namespace ecs;
 
 int main()
 {	
-
 	entity_component_manager em;
-	auto cptr =  em.add_component<u32>(3, 34);
-	//std::cout << sizeof(*cptr) * 512 << std::endl;
-	auto cptr2 = em.add_component<u32>(2, 123);
-	auto cptr3 = em.add_component<r64>(23, 10.7838);
-	auto cptr4 = em.add_component<r64>(24, 252.34);
-	//std::cout << sizeof(*cptr3) * 512 << std::endl;
-	std::cout << cptr->data << std::endl;
-	std::cout << cptr << std::endl;
-	std::cout << cptr2->data << std::endl;
-	std::cout << cptr2 << std::endl;
-	std::cout << cptr3->data << std::endl;
-	std::cout << cptr3 << std::endl;
-	std::cout << cptr4->data << std::endl;
-	std::cout << cptr4 << std::endl;
+	for (int i = 0; i < PREALLOCATED_COUNT * 2; ++i)
+	{
+		em.make_component((u32)i + 1);
+	}
+	auto result = em.get_components_by_type<u32>();
+	for (auto& r : result)
+		std::cout << r->_data << std::endl;
 	return 0;
 }
+
+//auto cptr = em.make_component<u32>(23, "my_first_component");
+//auto cptr2 = em.make_component<u32>(34, "my_second_component");
+//auto cptr3 = em.make_component<r64>(100.484, "my third component");
+//auto cptr4 = em.make_component<r64>(20239.894731, "my fourth component");
+//std::cout << *(cptr->_data) << std::endl;
+//std::cout << *(cptr2->_data) << std::endl;
+//std::cout << *(cptr3->_data) << std::endl;
+//std::cout << *(cptr4->_data) << std::endl;
+//auto result = em.get_components_by_type<u32>();
+//auto result2 = em.get_components_by_type<r64>();
+//for (auto& r : result)
+//std::cout << r << std::endl;
+//for (auto& r : result2)
+//std::cout << r << std::endl;

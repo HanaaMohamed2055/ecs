@@ -12,6 +12,8 @@
 #include "cpprelude/hash_array.h"
 #include "cpprelude/string.h"
 
+#include "ecs/bag.h"
+
 #define INVALID_ID 0
 #define PREALLOCATED_COUNT 512
 
@@ -19,11 +21,9 @@ using namespace cpprelude;
 
 namespace ecs 
 {
-	using entity_id = u32;
-	using component_id = u32;
-
-
 	// //tick function
+	using entity_id = u64;
+	using component_id = u64;
 
 	struct world
 	{
@@ -61,6 +61,9 @@ namespace ecs
 		entity_id _eid;
 		component_id _cid;
 		string _name;
+		using func = void(*) (void*);
+		void* _data;
+		func destroy;
 
 		base_component():
 			_eid(INVALID_ID), _cid(INVALID_ID)
@@ -77,10 +80,15 @@ namespace ecs
 	};
 
 	template<typename T>
+	void dispose(void* d)
+	{
+		T* data = static_cast<T*>(d);
+		data->~T();
+	}
+
+	template<typename T>
 	struct component: base_component
 	{
-		T* _data;
-
 		component():
 			base_component()
 		{}
@@ -95,6 +103,7 @@ namespace ecs
 
 		component(T* component_data):
 			data(component_data)
+		{}
 
 		component(component_id cid, T* component_data):
 			base_component(cid), _data(component_data)
@@ -111,7 +120,6 @@ namespace ecs
 		component(component&& c) :
 			base_component(c._cid, c._name), _data(new T(std::move(c._data)))
 		{}
-	
 	};
 
 
@@ -124,29 +132,31 @@ namespace ecs
 		hash_array <string, dynamic_array<base_component*>> components_table;
 		hash_array <entity_id, component_types_table> entities_components_table;
 
-		dynamic_array<entity> entity_index;
+		bag<entity> entity_bag;
+		queue_array<entity_id> available_ids;
+		
 
-		queue_array<entity_id> free_places;
-
-		template<typename T>
 		entity* make_entity()
 		{
 			entity_id new_id;
-			if (free_places.empty())
+			if (!available_ids.empty())
 			{
-				new_id = free_places.front();
-				free_places.dequeue();
+				new_id = available_ids.front();
+				available_ids.dequeue();
 			}
 			else
-				new_id = entity_index.count() + 1;
+				new_id = available_ids.count() + 1;
 
+			auto entity_ptr = entity_bag.add(entity(new_id));
+			return entity_ptr;
 		}
 
 		template<typename T>
 		component<T>* make_component(T data, string name = "", bool SoA = true)
 		{
 			auto key = typeid(T).name();
-			//SoA is the default mode, preallocation is 
+
+			//SoA is the default mode
 			if (SoA)
 			{
 				auto found = data_types_map.lookup(key);
@@ -156,11 +166,15 @@ namespace ecs
 					data_types_map[key].first.insert_back((void*)new_type_ptr);
 					data_types_map[key].second = 0;
 				}
+
 				T* data_ptr = reinterpret_cast<T*>(*(data_types_map[key].first.back()));
 				data_ptr[data_types_map[key].second] = std::move(data);
 				base_component* component_ptr = new component<T>(INVALID_ID, name, &data_ptr[data_types_map[key].second]);
+				component_ptr->destroy = dispose<T>;
+				
 				++data_types_map[key].second;
 				components_table[key].insert_back(component_ptr);
+			
 				return static_cast<component<T>*>(component_ptr);
 			}
 
@@ -189,8 +203,8 @@ namespace ecs
 		template<typename T>
 		dynamic_array<component<T>*> get_components_by_type(entity_id id = INVALID_ID)
 		{
-			//if no id or invalid ID was supplied, all components of the type
-			//specified will be returned
+			// if no id or invalid ID was supplied, all components of the type
+			// specified will be returned
 			dynamic_array<component<T>*> components;
 			auto key = typeid(T).name();
 
@@ -231,12 +245,12 @@ namespace ecs
 		{
 
 			// this should remove the entity from the entities index
-			// and remove all components binded to it
+			// and remove all components bound to it
 		}
 
 		~entity_component_manager()
 		{
-			
+				
 		}
 	};
 

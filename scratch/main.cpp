@@ -8,13 +8,28 @@ using namespace ecs;
 int main()
 {	
 	entity_component_manager em;
-	for (int i = 0; i < PREALLOCATED_COUNT * 2; ++i)
-	{
-		em.make_component((u32)i + 1);
-	}
-	auto result = em.get_components_by_type<u32>();
-	for (auto& r : result)
-		std::cout << r->_data << std::endl;
+	//for (int i = 0; i < PREALLOCATED_COUNT * 2; ++i)
+	//{
+	//	em.make_component((u32)i + 1);
+	//}
+	//auto result = em.get_components_by_type<u32>();
+	//for (auto& r : result)
+	//	std::cout << r->_data << std::endl;
+	
+	bag<entity> entity_bag;
+	dynamic_array<entity*> ed;
+	
+	for (auto i = 1; i < 20; ++i)
+		ed.insert_back(entity_bag.add(entity(i)));
+		
+	entity_bag.remove(ed[1]);
+	entity_bag.remove(ed[5]);
+	entity_bag.remove(ed[11]);
+	entity_bag.remove(ed[16]);
+
+	entity_bag.add(entity(12));
+	entity_bag.add(entity(30));
+
 	return 0;
 }
 

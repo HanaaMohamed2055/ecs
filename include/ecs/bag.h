@@ -34,9 +34,9 @@ namespace ecs
 			free_places.enqueue((usize)diff);
 		}
 
-		usize get_size()
+		usize get_index(T* element)
 		{
-			return index.count();
+			return (element - &index[0]);
 		}
 	};
 }

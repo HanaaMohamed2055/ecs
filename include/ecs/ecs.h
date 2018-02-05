@@ -98,28 +98,44 @@ namespace ecs
 		{}
 
 		component(component_id cid, T component_data):
-			base_component(cid), _data(new T(component_data))
-		{}
+			base_component(cid)
+		{
+			_data = new T(component_data);
+		}
 
 		component(T* component_data):
-			data(component_data)
-		{}
+		{
+			_data = component_data;
+		}
 
 		component(component_id cid, T* component_data):
-			base_component(cid), _data(component_data)
-		{}
+			base_component(cid)
+		{
+			_data = component_data;
+		}
 		
 		component(component_id cid, string name, T* component_data):
-			base_component(cid, name), _data(component_data)
-		{}
+			base_component(cid, name) 
+		{
+			_data = component_data;
+		}
 
 		component(const component& c):
-			base_component(c._cid, c._name), _data(new T(c.data))
-		{}
+			base_component(c._cid, c._name)
+		{
+			_data = new T(c.data);
+		}
 
 		component(component&& c) :
-			base_component(c._cid, c._name), _data(new T(std::move(c._data)))
-		{}
+			base_component(c._cid, c._name)
+		{
+			_data = new T(std::move(c._data));
+		}
+
+		T get_data()
+		{
+			return *(reinterpret_cast<T*>(_data));
+		}
 	};
 
 
@@ -133,22 +149,20 @@ namespace ecs
 		hash_array <entity_id, component_types_table> entities_components_table;
 
 		bag<entity> entity_bag;
-		queue_array<entity_id> available_ids;
+		bag<base_component*> component_bag;
 		
-
+		
 		entity* make_entity()
 		{
-			entity_id new_id;
-			if (!available_ids.empty())
-			{
-				new_id = available_ids.front();
-				available_ids.dequeue();
-			}
-			else
-				new_id = available_ids.count() + 1;
-
-			auto entity_ptr = entity_bag.add(entity(new_id));
+			auto entity_ptr = entity_bag.add(entity());
+			entity_ptr->_eid = entity_bag.get_index(entity_ptr);
 			return entity_ptr;
+		}
+
+		void kill_entity(entity* entity_ptr)
+		{
+			entity_ptr->remove();
+			entity_bag.remove(entity_ptr);
 		}
 
 		template<typename T>
@@ -156,7 +170,7 @@ namespace ecs
 		{
 			auto key = typeid(T).name();
 
-			//SoA is the default mode
+			//SoA - structure of arrays is the default mode
 			if (SoA)
 			{
 				auto found = data_types_map.lookup(key);
@@ -167,18 +181,39 @@ namespace ecs
 					data_types_map[key].second = 0;
 				}
 
+				// set component data
 				T* data_ptr = reinterpret_cast<T*>(*(data_types_map[key].first.back()));
 				data_ptr[data_types_map[key].second] = std::move(data);
+
+				// create component, add it to the system bag and cache its type
 				base_component* component_ptr = new component<T>(INVALID_ID, name, &data_ptr[data_types_map[key].second]);
 				component_ptr->destroy = dispose<T>;
-				
 				++data_types_map[key].second;
+				component_bag.add(component_ptr);
 				components_table[key].insert_back(component_ptr);
 			
 				return static_cast<component<T>*>(component_ptr);
 			}
 
 			return nullptr;
+		}
+
+		template<typename T>
+		bool bind_to_entity(entity* e, component<T>* c)
+		{
+			// binds a component to an entity
+			// at the current time, a component should be bound only to one entity
+			if (c->_eid != INVALID_ID) return false;
+			c->_eid = e->_eid;
+			c->_cid = e->component_count + 1;
+			entities_components_table[e->_eid][typeid(T).name()].insert_back(static_cast<base_component*>(c));
+			return true;
+		}
+
+		template<typename T>
+		bool unbind_component(component<T>* c)
+		{
+
 		}
 
 		dynamic_array<base_component*> get_all_components(entity_id id)
@@ -250,7 +285,7 @@ namespace ecs
 
 		~entity_component_manager()
 		{
-				
+		
 		}
 	};
 

@@ -63,6 +63,7 @@ namespace ecs
 		string _name;
 		using func = void(*) (void*);
 		void* _data;
+		usize position;
 		func destroy;
 
 		base_component():
@@ -142,11 +143,13 @@ namespace ecs
 	struct entity_component_manager
 	{
 	
-		using component_types_table = hash_array<string, dynamic_array<base_component*>>;
+		using component_types_table = hash_array<string, dynamic_array<usize>>;
+		using deleted_component_ids = stack_array<component_id>;
 		
 		hash_array <string, std::pair<dynamic_array<void*>, int>> data_types_map;
-		hash_array <string, dynamic_array<base_component*>> components_table;
+		hash_array <string, dynamic_array<usize>> components_table;
 		hash_array <entity_id, component_types_table> entities_components_table;
+		hash_array <entity_id, deleted_component_ids> ids_for_reuse;
 
 		bag<entity> entity_bag;
 		bag<base_component*> component_bag;
@@ -159,11 +162,14 @@ namespace ecs
 			return &entity_bag[id];
 		}
 
-		void kill_entity(entity* entity_ptr)
+		void kill_entity(entity* entity_ptr, bool deep = true)
 		{
+			// if deep is true, all components bound to the entity will be deleted
 			entity_ptr->remove();
 			entity_bag.remove(entity_ptr->_eid);
 		}
+
+		// this function needs to be visited to handle the case of reusing the place of an old component
 
 		template<typename T>
 		component<T>* make_component(T data, string name = "", bool SoA = true)
@@ -182,15 +188,16 @@ namespace ecs
 				}
 
 				// set component data
-				T* data_ptr = reinterpret_cast<T*>(*(data_types_map[key].first.back()));
+				T* data_ptr = static_cast<T*>(*(data_types_map[key].first.back()));
 				data_ptr[data_types_map[key].second] = std::move(data);
 
 				// create component, add it to the system bag and cache its type
 				base_component* component_ptr = new component<T>(INVALID_ID, name, &data_ptr[data_types_map[key].second]);
 				component_ptr->destroy = dispose<T>;
 				++data_types_map[key].second;
-				component_bag.add(component_ptr);
-				components_table[key].insert_back(component_ptr);
+				usize index = component_bag.insert(component_ptr);
+				component_ptr->position = index;
+				components_table[key].insert_back(index);
 			
 				return static_cast<component<T>*>(component_ptr);
 			}
@@ -201,20 +208,46 @@ namespace ecs
 		template<typename T>
 		bool bind_to_entity(entity* e, component<T>* c)
 		{
-			// binds a component to an entity
-			// at the current time, a component should be bound only to one entity
-			if (c->_eid != INVALID_ID) return false;
+			// for now, a component should be bound only to one entity
+			if (c->_eid != INVALID_ID) 
+				return false;
 			c->_eid = e->_eid;
-			c->_cid = e->component_count;
-			entities_components_table[e->_eid][typeid(T).name()].insert_back(static_cast<base_component*>(c));
+			
+			if (ids_for_reuse.lookup(e->_eid) != ids_for_reuse.end())
+			{
+				c->_cid = ids_for_reuse[e->_eid].top();
+				ids_for_reuse[e->_eid].pop();
+				++e->component_count;
+			}
+			else
+				c->_cid = e->component_count++;
+	
+			entities_components_table[e->_eid][typeid(T).name()].insert_back(c->position);
 			return true;
 		}
+
 
 		template<typename T>
 		bool unbind_component(component<T>* c)
 		{
+			if (c->_eid == INVALID_ID) 
+				return false;
+		
+			auto& container = entities_components_table[c->_eid][typeid(T).name()];
+			
+			// remove the index of the component from entity_component_table
+			auto index = std::find(container.begin(), container.end(), c->position) - container.begin();
+			std::swap(container[index], container[container.count() - 1]);
+			container.remove_back(1);
+	
+			--entity_bag[c->_eid].component_count;
+			ids_for_reuse[c->_eid].push(c->_cid);
+			c->_eid = INVALID_ID;
+			c->_cid = INVALID_ID;
 
+			return true;
 		}
+
 
 		dynamic_array<base_component*> get_all_components(entity_id id)
 		{
@@ -227,8 +260,8 @@ namespace ecs
 				for (auto it = components_table.begin(); it != components_table.end(); ++it)
 				{
 					auto& container = it.value();
-					for (auto ptr : container)
-						components.insert_back(ptr);
+					for (auto index : container)
+						components.insert_back(component_bag[index]);
 				}
 			}
 
@@ -282,6 +315,14 @@ namespace ecs
 			// this should remove the entity from the entities index
 			// and remove all components bound to it
 		}
+		
+		template<typename return_type>
+		void apply(std::function<return_type ()> func)
+		{}
+
+		template<typename component_type, typename return_type>
+		void apply_on_type(std::function<return_type ()> func)
+		{}
 
 		~entity_component_manager()
 		{

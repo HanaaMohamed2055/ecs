@@ -124,18 +124,18 @@ namespace ecs
 		component(const component& c):
 			base_component(c._cid, c._name)
 		{
-			_data = new T(c.data);
+			_data = c.data;
 		}
 
 		component(component&& c) :
 			base_component(c._cid, c._name)
 		{
-			_data = new T(std::move(c._data));
+			_data = c._data;
 		}
 
 		T get_data()
 		{
-			return *(reinterpret_cast<T*>(_data));
+			return *(static_cast<T*>(_data));
 		}
 	};
 
@@ -145,8 +145,8 @@ namespace ecs
 	
 		using component_types_table = hash_array<string, dynamic_array<usize>>;
 		using deleted_component_ids = stack_array<component_id>;
-		
-		hash_array <string, std::pair<dynamic_array<void*>, int>> data_types_map;
+
+		hash_array <string, void*> data_types_map;
 		hash_array <string, dynamic_array<usize>> components_table;
 		hash_array <entity_id, component_types_table> entities_components_table;
 		hash_array <entity_id, deleted_component_ids> ids_for_reuse;
@@ -169,7 +169,7 @@ namespace ecs
 			entity_bag.remove(entity_ptr->_eid);
 		}
 
-		// this function needs to be visited to handle the case of reusing the place of an old component
+		// this function needs to be revisited to handle the case of reusing the place of an old component
 
 		template<typename T>
 		component<T>* make_component(T data, string name = "", bool SoA = true)
@@ -180,25 +180,26 @@ namespace ecs
 			if (SoA)
 			{
 				auto found = data_types_map.lookup(key);
-				if (found == data_types_map.end() || (found != data_types_map.end() && found.value().second == PREALLOCATED_COUNT - 1))
+				if (found == data_types_map.end())
 				{
-					T* new_type_ptr = new T[PREALLOCATED_COUNT];
-					data_types_map[key].first.insert_back((void*)new_type_ptr);
-					data_types_map[key].second = 0;
+					bag<T>* new_type_ptr = new bag<T>();
+					new_type_ptr->reserve(PREALLOCATED_COUNT);
+					data_types_map[key] = ((void*)new_type_ptr);
 				}
 
 				// set component data
-				T* data_ptr = static_cast<T*>(*(data_types_map[key].first.back()));
-				data_ptr[data_types_map[key].second] = std::move(data);
-
+				bag<T>& data_bag = *static_cast<bag<T>*>(data_types_map[key]);
+				usize index = data_bag.insert(data);
+				auto data_ptr = &data_bag[index];
+				bag<T>& check_bag = *static_cast<bag<T>*>(data_types_map[key]);
+				
 				// create component, add it to the system bag and cache its type
-				base_component* component_ptr = new component<T>(INVALID_ID, name, &data_ptr[data_types_map[key].second]);
+				base_component* component_ptr = new component<T>(INVALID_ID, name, data_ptr);
 				component_ptr->destroy = dispose<T>;
-				++data_types_map[key].second;
-				usize index = component_bag.insert(component_ptr);
+				index = component_bag.insert(component_ptr);
 				component_ptr->position = index;
 				components_table[key].insert_back(index);
-			
+								
 				return static_cast<component<T>*>(component_ptr);
 			}
 
@@ -261,7 +262,10 @@ namespace ecs
 				{
 					auto& container = it.value();
 					for (auto index : container)
-						components.insert_back(component_bag[index]);
+					{
+						auto ptr = component_bag[index];
+						components.insert_back(ptr);
+					}
 				}
 			}
 

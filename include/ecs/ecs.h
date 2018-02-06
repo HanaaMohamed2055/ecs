@@ -146,6 +146,8 @@ namespace ecs
 		using component_types_table = hash_array<string, dynamic_array<usize>>;
 		using deleted_component_ids = stack_array<component_id>;
 
+		//hash_array<string, *this should be the allocator itself so maybe pool_allocator or arena_t whatever> data_types_map;
+		//instead of void we may use memory_context*
 		hash_array <string, void*> data_types_map;
 		hash_array <string, dynamic_array<usize>> components_table;
 		hash_array <entity_id, component_types_table> entities_components_table;
@@ -155,26 +157,29 @@ namespace ecs
 		bag<base_component*> component_bag;
 		
 		
-		entity* make_entity()
+		entity_id make_entity()
 		{
 			entity_id id = entity_bag.insert(entity());
 			entity_bag[id]._eid = id;
-			return &entity_bag[id];
+			return id;
 		}
 
 		void kill_entity(entity* entity_ptr, bool deep = true)
 		{
-			// if deep is true, all components bound to the entity will be deleted
+			// if deep is true, all components bound to the entity will be deleted not just unbound
 			entity_ptr->remove();
 			entity_bag.remove(entity_ptr->_eid);
 		}
 
-		// this function needs to be revisited to handle the case of reusing the place of an old component
+		// this function needs to be visited to handle the case of reusing the place of an old component
 
 		template<typename T>
 		component<T>* make_component(T data, string name = "", bool SoA = true)
 		{
 			auto key = typeid(T).name();
+			//MOSTAFA
+			//auto t = data_types_map[key]->alloc<T>();
+			//MOSTAFA
 
 			//SoA - structure of arrays is the default mode
 			if (SoA)
@@ -207,23 +212,24 @@ namespace ecs
 		}
 
 		template<typename T>
-		bool bind_to_entity(entity* e, component<T>* c)
+		bool bind_to_entity(entity_id eid, component<T>* c)
 		{
 			// for now, a component should be bound only to one entity
 			if (c->_eid != INVALID_ID) 
 				return false;
-			c->_eid = e->_eid;
+			c->_eid = eid;
 			
-			if (ids_for_reuse.lookup(e->_eid) != ids_for_reuse.end())
+			if (ids_for_reuse.lookup(eid) != ids_for_reuse.end())
 			{
-				c->_cid = ids_for_reuse[e->_eid].top();
-				ids_for_reuse[e->_eid].pop();
-				++e->component_count;
+				c->_cid = ids_for_reuse[eid].top();
+				ids_for_reuse[eid].pop();
 			}
 			else
-				c->_cid = e->component_count++;
+				c->_cid = entity_bag[eid].component_count;
+
+			++entity_bag[eid].component_count;
 	
-			entities_components_table[e->_eid][typeid(T).name()].insert_back(c->position);
+			entities_components_table[eid][typeid(T).name()].insert_back(c->position);
 			return true;
 		}
 
@@ -279,28 +285,27 @@ namespace ecs
 			// specified will be returned
 			dynamic_array<component<T>*> components;
 			auto key = typeid(T).name();
-
+			
+			
 			if (id == INVALID_ID && components_table.lookup(key) != components_table.end())
 			{
 				auto& container = components_table[key];
-				for (auto ptr: container)
+				for (auto index : container)
 				{
-					auto c_ptr = static_cast<component<T>*>(ptr);
+					auto c_ptr = static_cast<component<T>*>(component_bag[index]);
 					components.insert_back(c_ptr);
 				}
 			}
-
 			else if (entities_components_table.lookup(id) != entities_components_table.end()
-					&& entities_components_table[id].lookup(key) != entities_components_table[id].end())
+				&& entities_components_table[id].lookup(key) != entities_components_table[id].end())
 			{
 				auto& container = entities_components_table[id][key];
-				for (auto ptr: container)
+				for (auto index : container)
 				{
-					auto c_ptr = static_cast<component<T>*>(ptr);
+					auto c_ptr = static_cast<component<T>*>(component_bag[index]);
 					components.insert_back(c_ptr);
 				}
 			}
-
 			return components;
 		}
 
@@ -311,13 +316,6 @@ namespace ecs
 			//each component in the hash table will have a queue of jobs
 			//process will always be called for each component in the queue at the next tick.
 			return true;
-		}
-
-		void kill_entity(entity_id eid)
-		{
-
-			// this should remove the entity from the entities index
-			// and remove all components bound to it
 		}
 		
 		template<typename return_type>

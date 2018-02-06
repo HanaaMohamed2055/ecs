@@ -14,7 +14,7 @@
 
 #include "ecs/bag.h"
 
-#define INVALID_ID 0
+#define INVALID_ID (1 << 63) - 1
 #define PREALLOCATED_COUNT 512
 
 using namespace cpprelude;
@@ -154,15 +154,15 @@ namespace ecs
 		
 		entity* make_entity()
 		{
-			auto entity_ptr = entity_bag.add(entity());
-			entity_ptr->_eid = entity_bag.get_index(entity_ptr);
-			return entity_ptr;
+			entity_id id = entity_bag.insert(entity());
+			entity_bag[id]._eid = id;
+			return &entity_bag[id];
 		}
 
 		void kill_entity(entity* entity_ptr)
 		{
 			entity_ptr->remove();
-			entity_bag.remove(entity_ptr);
+			entity_bag.remove(entity_ptr->_eid);
 		}
 
 		template<typename T>
@@ -205,7 +205,7 @@ namespace ecs
 			// at the current time, a component should be bound only to one entity
 			if (c->_eid != INVALID_ID) return false;
 			c->_eid = e->_eid;
-			c->_cid = e->component_count + 1;
+			c->_cid = e->component_count;
 			entities_components_table[e->_eid][typeid(T).name()].insert_back(static_cast<base_component*>(c));
 			return true;
 		}

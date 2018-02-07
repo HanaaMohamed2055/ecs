@@ -23,14 +23,14 @@ int main()
 	em.bind_to_entity(eptr2, comp4);
 	em.bind_to_entity(eptr1, comp2);
 
-	auto e1 = em.get_components_by_type<r32>(eptr1);
+	auto e1 = em.get_components_by_type<u32>(eptr1);
 	for (auto e : e1)
 		std::cout << e->get_data() << std::endl;
 	
 	
 	std::cout << "-----------------\n";
 	em.unbind_component(comp1);
-	e1 = em.get_components_by_type<r32>(eptr1);
+	e1 = em.get_components_by_type<u32>(eptr1);
 	auto e2 = em.get_all_components(eptr2);
 	for (auto e : e1)
 		std::cout << e->get_data() << std::endl;
@@ -54,8 +54,8 @@ int main()
 	if (e2.empty())
 		std::cout << "success\n" << std:: endl;
 
-	//em.kill_entity(eptr1);
-	//em.kill_entity(eptr2);
+	em.kill_entity(eptr1);
+	em.kill_entity(eptr2);
 	auto e_ent1 = em.get_all_components(eptr1);
 	auto e_ent2 = em.get_components_by_type<u32>(eptr2);
 	if (e_ent1.empty() && e_ent2.empty())

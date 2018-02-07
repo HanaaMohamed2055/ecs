@@ -15,7 +15,7 @@
 #include "ecs/bag.h"
 
 #define INVALID_ID (1 << 63) - 1
-#define PREALLOCATED_COUNT 512
+#define PREALLOCATED_COUNT MEGABYTES(1)
 
 using namespace cpprelude;
 
@@ -152,14 +152,19 @@ namespace ecs
 
 		//hash_array<string, *this should be the allocator itself so maybe pool_allocator or arena_t whatever> data_types_map;
 		//instead of void we may use memory_context*
-		hash_array <string, void*> data_types_map;
+		hash_array <string, std::pair<slice<byte>, usize>> data_types_map;
 		hash_array <string, dynamic_array<usize>> components_table;
 		hash_array <entity_id, component_types_table> entities_components_table;
 		hash_array <entity_id, deleted_component_ids> ids_for_reuse;
 
 		bag<entity> entity_bag;
 		bag<base_component*> component_bag;
+
+		memory_context* _context;
 		
+		entity_component_manager(memory_context* context = platform->global_memory)
+			:_context(context)
+		{}
 		
 		entity_id make_entity()
 		{
@@ -212,21 +217,20 @@ namespace ecs
 				auto found = data_types_map.lookup(key);
 				if (found == data_types_map.end())
 				{
-					bag<T>* new_type_ptr = new bag<T>();
-				//	new_type_ptr->reserve(PREALLOCATED_COUNT);
-					data_types_map[key] = ((void*)new_type_ptr);
+					data_types_map[key].first = _context->alloc<T>(PREALLOCATED_COUNT).convert<byte>();
+					data_types_map[key].second = 0;
 				}
 
 				// set component data
-				bag<T>& data_bag = *static_cast<bag<T>*>(data_types_map[key]);
-				usize index = data_bag.insert(data);
-				auto data_ptr = &data_bag[index];
-				bag<T>& check_bag = *static_cast<bag<T>*>(data_types_map[key]);
-				
+				auto data_slice = data_types_map[key].first.convert<T>();
+				new (&data_slice[data_types_map[key].second]) T(data);
+				T* data_ptr = static_cast<T*>(&data_slice[data_types_map[key].second]);
+				++data_types_map[key].second;
+
 				// create component, add it to the system bag and cache its type
 				base_component* component_ptr = new component<T>(INVALID_ID, name, data_ptr);
 				component_ptr->destroy = dispose<T>;
-				index = component_bag.insert(component_ptr);
+				usize index = component_bag.insert(component_ptr);
 				component_ptr->position = index;
 				components_table[key].insert_back(index);
 								
@@ -354,8 +358,11 @@ namespace ecs
 		~entity_component_manager()
 		{
 			// delete allocated components
-			for (auto component_ptr: component_bag)
-				delete component_ptr;
+			for (auto it= data_types_map.begin(); it != data_types_map.end(); ++it)
+			{
+				auto slice = it.value().first;
+				_context->free(slice);
+			}
 		}
 	};
 

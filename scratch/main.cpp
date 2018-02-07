@@ -26,6 +26,8 @@ int main()
 	auto e1 = em.get_components_by_type<r32>(eptr1);
 	for (auto e : e1)
 		std::cout << e->get_data() << std::endl;
+	
+	
 	std::cout << "-----------------\n";
 	em.unbind_component(comp1);
 	e1 = em.get_components_by_type<r32>(eptr1);
@@ -48,9 +50,15 @@ int main()
 		std::cout << e->_cid << std::endl;
 		std::cout << "---" << std::endl;
 	}
-
+	
 	if (e2.empty())
 		std::cout << "success\n" << std:: endl;
 
+	//em.kill_entity(eptr1);
+	//em.kill_entity(eptr2);
+	auto e_ent1 = em.get_all_components(eptr1);
+	auto e_ent2 = em.get_components_by_type<u32>(eptr2);
+	if (e_ent1.empty() && e_ent2.empty())
+		std::cout << "SUCCESS" << std::endl;
 }
 

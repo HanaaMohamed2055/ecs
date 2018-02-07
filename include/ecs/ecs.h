@@ -77,7 +77,11 @@ namespace ecs
 		base_component(component_id cid, string name):
 			_eid(INVALID_ID), _cid(cid), _name(name)
 		{}
-			
+
+		~base_component()
+		{
+			destroy(_data);
+		}
 	};
 
 	template<typename T>
@@ -124,7 +128,7 @@ namespace ecs
 		component(const component& c):
 			base_component(c._cid, c._name)
 		{
-			_data = c.data;
+			_data = c._data;
 		}
 
 		component(component&& c) :
@@ -164,11 +168,32 @@ namespace ecs
 			return id;
 		}
 
-		void kill_entity(entity* entity_ptr, bool deep = true)
+
+		void kill_entity(entity_id eid, bool deep = true)
 		{
 			// if deep is true, all components bound to the entity will be deleted not just unbound
-			entity_ptr->remove();
-			entity_bag.remove(entity_ptr->_eid);
+			if (!entity_bag[eid].is_valid) return;
+			
+			entity_bag[eid].remove();
+			entity_bag.remove(eid);
+			
+			// remove all components bound to an entity
+			if (deep && entities_components_table.lookup(eid) != entities_components_table.end())
+			{
+				auto& table = entities_components_table[eid];
+				for (auto type = table.begin(); type != table.end(); ++type)
+				{
+					dynamic_array<usize>& container = type.value();
+					for (auto index : container)
+					{
+						component_bag.remove(index);
+						delete component_bag[index];
+						component_bag[index] = nullptr;
+					}
+					container.clear();
+				}
+				table.clear();
+			}
 		}
 
 		// this function needs to be visited to handle the case of reusing the place of an old component
@@ -188,7 +213,7 @@ namespace ecs
 				if (found == data_types_map.end())
 				{
 					bag<T>* new_type_ptr = new bag<T>();
-					new_type_ptr->reserve(PREALLOCATED_COUNT);
+				//	new_type_ptr->reserve(PREALLOCATED_COUNT);
 					data_types_map[key] = ((void*)new_type_ptr);
 				}
 
@@ -328,7 +353,9 @@ namespace ecs
 
 		~entity_component_manager()
 		{
-		
+			// delete allocated components
+			for (auto component_ptr: component_bag)
+				delete component_ptr;
 		}
 	};
 

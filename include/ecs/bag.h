@@ -28,7 +28,7 @@ namespace ecs
 
 		~bag()
 		{
-
+			clear();
 		}
 
 		template<typename ... TArgs>
@@ -127,6 +127,15 @@ namespace ecs
 			if (available_size >= expected_size)
 				return;
 			_data.reserve(expected_size - available_size);
+		}
+		
+		void
+		clear()
+		{
+			for (T element : _data)
+				element.~T();
+			_data.clear();
+			_free_indices.decay();
 		}
 
 		//iterator interface here

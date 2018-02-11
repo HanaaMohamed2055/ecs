@@ -35,8 +35,6 @@ namespace ecs
 				_content = data;
 				is_valid = true;
 			}
-
-
 		};
 	}
 

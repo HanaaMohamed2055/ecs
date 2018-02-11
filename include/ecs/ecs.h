@@ -175,7 +175,7 @@ namespace ecs
 			auto& container = component_types[component_bag[component_id].type];
 			
 			component_bag[component_id].destroy(_context);
-			//component_bag.remove(component_id);
+			component_bag.remove(component_id);
 
 			auto itr = std::find(container.begin(), container.end(), component_id);
 			if (itr != container.end())

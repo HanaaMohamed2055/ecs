@@ -27,8 +27,8 @@ int main()
 		std::cout << e->id << std::endl;
 
 	std::cout << "--------------------------------\n";
-	//w.kill_entity(entity1.id);
-	//w.kill_entity(entity2.id);
+	w.kill_entity(entity1.id);
+	w.kill_entity(entity2.id);
 	e1 = w.get_components_by_type<u32>();
 	for (auto e : e1)
 		std::cout << e.get_data() << std::endl;

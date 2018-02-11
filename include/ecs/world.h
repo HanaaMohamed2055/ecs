@@ -1,5 +1,7 @@
 #pragma once
 
+#include <functional>
+
 #include <cpprelude/defines.h>
 #include <cpprelude/memory_context.h>
 #include <cpprelude/platform.h>
@@ -56,7 +58,8 @@ namespace ecs
 			component.name = name;
 
 			// bind the component to the entity and cache its type
-			entity_components[entity_id].insert_back(id);
+			if(entity_id != INVALID_ID)
+				entity_components[entity_id].insert_back(id);
 			component_types[key].insert_back(id);
 
 			return &component;
@@ -113,6 +116,7 @@ namespace ecs
 			entity_bag.remove(entity_id);
 		}
 
+
 		void remove_component(u64 component_id, bool unbind_from_entity = true)
 		{
 			auto& container = component_types[component_bag[component_id].type];
@@ -132,12 +136,18 @@ namespace ecs
 		
 		void clean_up()
 		{
-			for (auto comp: component_bag)
+			//here, we should iterate on remaining valid components and destroy them (free the memory they allocated)
+			for (auto it = component_bag.begin(); it != component_bag.end(); ++it)
 			{
-				if (comp.is_valid)
-					comp._content.destroy(_context);
+				std::cout << "valid\n";
 			}
+
+			//for (auto c : component_bag)
+			//{
+
+			//}
 		}
+
 
 		~World()
 		{

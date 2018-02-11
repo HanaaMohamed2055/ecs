@@ -129,11 +129,19 @@ namespace ecs
 			}
 		}
 
-		void free_all()
-		{
-			
-		}
 		
-	};
+		void clean_up()
+		{
+			for (auto comp: component_bag)
+			{
+				if (comp.is_valid)
+					comp._content.destroy(_context);
+			}
+		}
 
+		~World()
+		{
+			clean_up();
+		}
+	};
 }

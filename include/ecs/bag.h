@@ -23,13 +23,6 @@ namespace ecs
 				is_valid = true;
 			}
 
-			template<typename ... TArgs>
-			cell(TArgs&& ... args)
-			{
-				_content = T(std::forward<TArgs>(args)...);
-				is_valid = true;
-			}
-
 			cell(T& data)
 			{
 				_content = data;
@@ -70,7 +63,7 @@ namespace ecs
 			{
 				place = _free_indices.top();
 				_free_indices.pop();
-				new (_data.data() + place) cell<T>(std::forward<TArgs>(args)...);
+				new (_data.data() + place) details::cell<T>(std::forward<TArgs>(args)...);
 				return place;
 			}
 

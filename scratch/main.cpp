@@ -1,5 +1,6 @@
 #include <cpprelude/defines.h>
-#include <ecs/ecs.h>
+#include <ecs/world.h>
+
 
 
 using namespace ecs;

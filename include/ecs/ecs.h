@@ -24,32 +24,31 @@ namespace ecs
 
 	struct Internal_Component
 	{
-		using free_func = void(*) (void*);
+		using free_func = void(*) (void*&, memory_context*);
 
 		cpprelude::u64 id = INVALID_ID;
 		cpprelude::u64 entity_id = INVALID_ID;
+		cpprelude::string name;
+		cpprelude::string type;
 		void* _data = nullptr;
 		World* world = nullptr;
 		free_func _destroy = nullptr;
 
-		void destroy()
+		void destroy(memory_context* context)
 		{
-			_destroy(_data);
+			_destroy(_data, context);
+			world = nullptr;
 		}		
-
-		~Internal_Component()
-		{
-			if (_data == nullptr) return;
-			destroy();
-		}
-
 	};
 
 	template<typename T>
-	void internal_component_dispose(void* d)
+	void internal_component_dispose(void*& d, memory_context* _context)
 	{
-		T* data = (T*)(d);
-		data->~T();
+		if (d == nullptr) return;
+		T* data = (T*)d;
+		auto data_slice = make_slice(data);
+		_context->free(data_slice);
+		d = nullptr;
 	}
 
 	template<typename T>
@@ -91,7 +90,7 @@ namespace ecs
 
 
 		template<typename T>
-		Component<T> make_component(T data, u64 entity_id)
+		Component<T> make_component(T data, u64 entity_id, string name = "")
 		{
 			u64 id = component_bag.insert(Internal_Component());
 
@@ -103,10 +102,12 @@ namespace ecs
 			new (component._data) T(data);
 			component._destroy = internal_component_dispose<T>;
 			component.world = this;
-			
+			cpprelude::string key = typeid(T).name();
+			component.type = key;
+			component.name = name;
+
 			// bind the component to the entity and cache its type
 			entity_components[entity_id].insert_back(id);
-			cpprelude::string key = typeid(T).name();
 			component_types[key].insert_back(id);
 
 			return &component;
@@ -149,6 +150,41 @@ namespace ecs
 
 			return components;
 		}
+	
+
+		void kill_entity(u64 entity_id)
+		{
+			auto& component_ids = entity_components[entity_id];
+
+			for (u64 cid: component_ids)
+			{
+				remove_component(cid, false);
+			}
+			component_ids.clear();
+			entity_bag.remove(entity_id);
+		}
+
+		void remove_component(u64 component_id, bool unbind_from_entity = true)
+		{
+			auto& container = component_types[component_bag[component_id].type];
+			
+			component_bag[component_id].destroy(_context);
+			component_bag.remove(component_id);
+
+			auto itr = std::find(container.begin(), container.end(), component_id);
+			if (itr != container.end())
+			{
+				auto index = itr - container.begin();
+				std::swap(container[index], container[container.count() - 1]);
+				container.remove_back();
+			}
+		}
+
+		void free_all()
+		{
+			
+		}
+		
 	};
 
 }

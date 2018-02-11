@@ -132,7 +132,7 @@ namespace ecs
 		void
 		clear()
 		{
-			for (T element : _data)
+			for (T element: _data)
 				element.~T();
 			_data.clear();
 			_free_indices.decay();

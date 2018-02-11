@@ -6,59 +6,30 @@ using namespace ecs;
 
 int main()
 {
-	entity_component_manager em;
-	//for (int i = 0; i < PREALLOCATED_COUNT * 2; ++i)
-	//	em.make_component<u32>(i);
+	World w;
+	auto entity1 = w.make_entity();
+	auto entity2 = w.make_entity();
 
-	auto eptr1 = em.make_entity();
-	auto eptr2 = em.make_entity();
+	auto component1 = w.make_component<u32>(32, entity1.id);
+	auto component2 = w.make_component<u32>(64, entity1.id);
+	auto component3 = w.make_component<r32>(283.489, entity1.id);
+	auto component4 = w.make_component<r32>(929.923, entity2.id);
+	auto component5 = w.make_component<u32>(9, entity2.id);
 
-	auto comp1 = em.make_component<u32>(32);
-	auto comp2 = em.make_component<u32>(64);
-	auto comp3 = em.make_component<r32>(121.239);
-	auto comp4 = em.make_component<r32>(919.938);
-
-	em.bind_to_entity(eptr1, comp1);
-	em.bind_to_entity(eptr1, comp3);
-	em.bind_to_entity(eptr2, comp4);
-	em.bind_to_entity(eptr1, comp2);
-
-	auto e1 = em.get_components_by_type<u32>(eptr1);
-	for (auto e : e1)
-		std::cout << e->get_data() << std::endl;
+	auto e1 = w.get_components_by_type<u32>(entity1.id);
+	for (auto e: e1)
+		std::cout << e.get_data() << std::endl;
 	
-	
-	std::cout << "-----------------\n";
-	em.unbind_component(comp1);
-	e1 = em.get_components_by_type<u32>(eptr1);
-	auto e2 = em.get_all_components(eptr2);
-	for (auto e : e1)
-		std::cout << e->get_data() << std::endl;
-	std::cout << "-------------------\n";
+	std::cout << "-------------------------------\n";
+	auto e2 = w.get_all_components(entity2.id);
 	for (auto e : e2)
-		std::cout << e->_cid << std::endl;
-	std::cout << "------------------\n";
-	em.unbind_component(comp4);
-	em.bind_to_entity(eptr1, comp4);
-	
-	e2 = em.get_all_components(eptr2);
-	auto el = em.get_all_components(eptr1);
+		std::cout << e->id << std::endl;
 
-	for (auto e : el)
-	{
-		std::cout << e->position << std::endl;
-		std::cout << e->_cid << std::endl;
-		std::cout << "---" << std::endl;
-	}
-	
-	if (e2.empty())
-		std::cout << "success\n" << std:: endl;
-
-	em.kill_entity(eptr1);
-	em.kill_entity(eptr2);
-	auto e_ent1 = em.get_all_components(eptr1);
-	auto e_ent2 = em.get_components_by_type<u32>(eptr2);
-	if (e_ent1.empty() && e_ent2.empty())
-		std::cout << "SUCCESS" << std::endl;
+	std::cout << "--------------------------------\n";
+	w.kill_entity(entity1.id);
+	w.kill_entity(entity2.id);
+	e1 = w.get_components_by_type<u32>();
+	for (auto e : e1)
+		std::cout << e.get_data() << std::endl;
 }
 

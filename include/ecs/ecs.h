@@ -11,20 +11,20 @@
 using namespace cpprelude;
 
 namespace ecs
-{
-	constexpr u64 INVALID_ID = -1UL;
+{	
+	constexpr cpprelude::u64 INVALID_ID = -1UL;
 
-	struct World; 	
+	struct World;
 
 	struct Entity
 	{
 		cpprelude::u64 id = INVALID_ID;
-		World* world = nullptr;	
+		World* world = nullptr;
 	};
 
 	struct Internal_Component
 	{
-		using free_func = void(*) (void*&, memory_context*);
+		using free_func = void(*) (void*&, cpprelude::memory_context*);
 
 		cpprelude::u64 id = INVALID_ID;
 		cpprelude::u64 entity_id = INVALID_ID;
@@ -34,15 +34,21 @@ namespace ecs
 		World* world = nullptr;
 		free_func _destroy = nullptr;
 
-		void destroy(memory_context* context)
+		void destroy(cpprelude::memory_context* context)
 		{
 			_destroy(_data, context);
 			world = nullptr;
-		}		
+		}
+
+		~Internal_Component()
+		{
+			//destroy();
+			//for now, we wil leave it like that
+		}
 	};
 
 	template<typename T>
-	void internal_component_dispose(void*& d, memory_context* _context)
+	void internal_component_dispose(void*& d, cpprelude::memory_context* _context)
 	{
 		if (d == nullptr) return;
 		T* data = (T*)d;
@@ -55,7 +61,7 @@ namespace ecs
 	struct Component
 	{
 		Internal_Component* component;
-		
+
 		Component(Internal_Component* c)
 			:component(c)
 		{}
@@ -169,7 +175,7 @@ namespace ecs
 			auto& container = component_types[component_bag[component_id].type];
 			
 			component_bag[component_id].destroy(_context);
-			component_bag.remove(component_id);
+			//component_bag.remove(component_id);
 
 			auto itr = std::find(container.begin(), container.end(), component_id);
 			if (itr != container.end())

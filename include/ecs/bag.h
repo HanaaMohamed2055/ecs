@@ -9,15 +9,46 @@
 
 namespace ecs
 {
+	namespace details
+	{
+		template<typename T>
+		struct cell
+		{
+			T _content;
+			bool is_valid;
+			
+			cell(T&& data)
+			{
+				_content = std::move(data);
+				is_valid = true;
+			}
+
+			template<typename ... TArgs>
+			cell(TArgs&& ... args)
+			{
+				_content = T(std::forward<TArgs>(args)...);
+				is_valid = true;
+			}
+
+			cell(T& data)
+			{
+				_content = data;
+				is_valid = true;
+			}
+
+
+		};
+	}
+
 	template<typename T>
 	struct bag
 	{
 		//there should be an iterator here
-		using iterator = cpprelude::sequential_iterator<T>;
-		using const_iterator = cpprelude::sequential_iterator<const T>;
+		using iterator = cpprelude::sequential_iterator<details::cell<T>>;
+		using const_iterator = cpprelude::sequential_iterator<const details::cell<T>>;
 
 		//dynamic array of the T with some form of other data that could occupy a byte or so
-		cpprelude::dynamic_array<T> _data;
+		cpprelude::dynamic_array<details::cell<T>> _data;
 		cpprelude::stack_array<cpprelude::usize> _free_indices;
 
 		//more constructors could be added
@@ -41,11 +72,11 @@ namespace ecs
 			{
 				place = _free_indices.top();
 				_free_indices.pop();
-				new (_data.data() + place) T(std::forward<TArgs>(args)...);
+				new (_data.data() + place) cell<T>(std::forward<TArgs>(args)...);
 				return place;
 			}
 
-			_data.emplace_back(std::forward<TArgs>(args)...);
+			_data.emplace_back(std::move(details::cell<T>(std::forward<TArgs>(args)...)));
 			return place;
 		}
 
@@ -58,11 +89,11 @@ namespace ecs
 			{
 				place = _free_indices.top();
 				_free_indices.pop();
-				new (_data.data() + place) T(value);
+				new (_data.data() + place) details::cell<T>(value);
 				return place;
 			}
 
-			_data.emplace_back(value);
+			_data.emplace_back(std::move(details::cell<T>(value)));
 			return place;
 		}
 
@@ -75,31 +106,32 @@ namespace ecs
 			{
 				place = _free_indices.top();
 				_free_indices.pop();
-				new (_data.data() + place) T(std::move(value));
+				new (_data.data() + place) details::cell<T>(std::move(value));
 				return place;
 			}
 
-			_data.emplace_back(std::move(value));
+			_data.emplace_back(std::move(details::cell<T>(std::move(value))));
 			return place;
 		}
 
 		void
 		remove(cpprelude::usize index)
 		{
-			_data[index].~T();
+			_data[index].is_valid = false;
+			_data[index]._content.~T();
 			_free_indices.push(index);
 		}
 
 		T&
 		operator[](cpprelude::usize index)
 		{
-			return _data[index];
+			return _data[index]._content;
 		}
 
 		const T&
 		operator[](cpprelude::usize index) const
 		{
-			return _data[index];
+			return _data[index]._content;
 		}
 
 		cpprelude::usize
@@ -132,10 +164,11 @@ namespace ecs
 		void
 		clear()
 		{
-			for (T element: _data)
-				element.~T();
-			_data.clear();
-			_free_indices.decay();
+			for (cpprelude::usize i = 0; i < _data.count(); ++i)
+			{ 
+				if (_data[i].is_valid)
+					_data[i]._content.~T();
+			}
 		}
 
 		//iterator interface here

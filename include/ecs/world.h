@@ -27,8 +27,9 @@ namespace ecs
 			:_context(context)
 		{}
 
-		API_ECS Entity
+		API_ECS	Entity
 		make_entity();
+		
 
 		template<typename T>
 		Component<T>
@@ -57,10 +58,9 @@ namespace ecs
 		}
 
 
-		//if no ID or invalid ID was supplied, all components of the type specified
-		//will be returned
 		template<typename T>
-		cpprelude::dynamic_array<Component<T>> get_components_by_type(cpprelude::u64 entity_id = INVALID_ID)
+		cpprelude::dynamic_array<Component<T>> 
+		get_components_by_type(cpprelude::u64 entity_id)
 		{
 			cpprelude::dynamic_array<Component<T>> components; 
 			cpprelude::string key = typeid(T).name();
@@ -80,59 +80,22 @@ namespace ecs
 		}
 
 
-		cpprelude::dynamic_array<Internal_Component*> get_all_components(cpprelude::u64 entity_id)
-		{
-			cpprelude::dynamic_array<Internal_Component*> components;
-			
-			if(entity_id != INVALID_ID)
-			{
-				auto& container = entity_components[entity_id];
-				for (auto index : container)
-					components.insert_back(&component_bag[index]);
-			}
+		API_ECS cpprelude::dynamic_array<Internal_Component*>
+		get_all_components(cpprelude::u64 entity_id);
 
-			return components;
-		}
 	
-
-		void kill_entity(cpprelude::u64 entity_id)
-		{
-			auto& component_ids = entity_components[entity_id];
-
-			for (cpprelude::u64 cid: component_ids)
-			{
-				remove_component(cid, false);
-			}
-			component_ids.clear();
-			entity_bag.remove(entity_id);
-		}
-
-
-		void remove_component(cpprelude::u64 component_id, bool unbind_from_entity = true)
-		{
-			auto& container = component_types[component_bag[component_id].type];
-			
-			component_bag[component_id].destroy(_context);
-			component_bag.remove(component_id);
-
-			auto itr = std::find(container.begin(), container.end(), component_id);
-			if (itr != container.end())
-			{
-				auto index = itr - container.begin();
-				std::swap(container[index], container[container.count() - 1]);
-				container.remove_back();
-			}
-		}
+		API_ECS void
+		kill_entity(cpprelude::u64 entity_id);
 
 		
-		void clean_up()
-		{
-			// here, we should iterate on remaining valid components and destroy them 
-			// free the memory allocated that will not be freed by ~bag()
-			for (auto& component : component_bag)
-				component.destroy(_context);
-		}
 
+		API_ECS void
+		remove_component(cpprelude::u64 component_id, bool unbind_from_entity = true);
+		
+		
+		API_ECS void
+		clean_up();
+		
 
 		~World()
 		{

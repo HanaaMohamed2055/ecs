@@ -28,7 +28,7 @@ int main()
 	std::cout << "--------------------------------\n";
 	w.kill_entity(entity1.id);
 	w.kill_entity(entity2.id);
-	e1 = w.get_components_by_type<cpprelude::u32>();
+	e1 = w.get_components_by_type<cpprelude::u32>(0);
 	for (auto e : e1)
 		std::cout << e.get_data() << std::endl;
 }

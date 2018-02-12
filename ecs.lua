@@ -12,6 +12,8 @@ project "ecs"
 		cpprelude_path .. "/include/"
 	}
 
+	links {"cpprelude"}
+	
 	if os.istarget("linux") then
 
 		buildoptions {"-std=c++14", "-Wall", "-fno-rtti", "-fno-exceptions"}

@@ -29,7 +29,8 @@ namespace ecs
 		World* world = nullptr;
 		free_func _destroy = nullptr;
 
-		void destroy(cpprelude::memory_context* context)
+		void
+		destroy(cpprelude::memory_context* context)
 		{
 			_destroy(_data, context);
 			world = nullptr;
@@ -43,7 +44,8 @@ namespace ecs
 	};
 
 	template<typename T>
-	void internal_component_dispose(void*& d, cpprelude::memory_context* _context)
+	void 
+	internal_component_dispose(void*& d, cpprelude::memory_context* _context)
 	{
 		if (d == nullptr) return;
 		T* data = (T*)d;
@@ -61,7 +63,14 @@ namespace ecs
 			:component(c)
 		{}
 
-		T get_data()
+		T& 
+		get_data()
+		{
+			return *(static_cast<T*>(component->_data));
+		}
+
+		const T&
+		get_data() const
 		{
 			return *(static_cast<T*>(component->_data));
 		}

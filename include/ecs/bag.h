@@ -181,6 +181,7 @@ namespace ecs
 				if (_valid[i])
 					_data[i].~T();
 			}
+			_data._count = 0;
 		}
 
 		//iterator interface here

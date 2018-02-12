@@ -50,7 +50,9 @@ namespace ecs
 		bag(cpprelude::memory_context* context = cpprelude::platform->global_memory)
 			:_data(context),
 			_free_indices(context)
-		{}
+		{
+			reserve(8);
+		}
 
 		~bag()
 		{
@@ -69,9 +71,11 @@ namespace ecs
 				place = _free_indices.top();
 				_free_indices.pop();
 				new (_data.data() + place) T(std::forward<TArgs>(args)...);
+				_valid[place] = true;
 				return place;
 			}
 
+			_valid.insert_back(true);
 			_data.emplace_back(std::forward<TArgs>(args)...);
 			return place;
 		}
@@ -80,16 +84,17 @@ namespace ecs
 		insert(const T& value)
 		{
 			cpprelude::usize place = _data.count();
-			_valid.insert_back(true);
-
+			
 			if (!_free_indices.empty())
 			{
 				place = _free_indices.top();
 				_free_indices.pop();
 				new (_data.data() + place) T(value);
+				_valid[place] = true;
 				return place;
 			}
 
+			_valid.insert_back(true);
 			_data.emplace_back(value);
 			return place;
 		}
@@ -98,16 +103,17 @@ namespace ecs
 		insert(T&& value)
 		{
 			cpprelude::usize place = _data.count();
-			_valid.insert_back(true);
-
+			
 			if (!_free_indices.empty())
 			{
 				place = _free_indices.top();
 				_free_indices.pop();
 				new (_data.data() + place) T(std::move(value));
+				_valid[place] = true;
 				return place;
 			}
 
+			_valid.insert_back(true);
 			_data.emplace_back(std::move(value));
 			return place;
 		}
@@ -150,6 +156,13 @@ namespace ecs
 			return _data.capacity()
 		}
 
+		bool
+		valid(cpprelude::usize index)
+		{
+			
+			return (index < _valid.count() && _valid[index]);
+		}
+
 		void
 		reserve(cpprelude::usize expected_size)
 		{
@@ -157,6 +170,7 @@ namespace ecs
 			if (available_size >= expected_size)
 				return;
 			_data.reserve(expected_size - available_size);
+			_valid.reserve(expected_size - available_size);
 		}
 		
 		void
@@ -171,33 +185,21 @@ namespace ecs
 
 		//iterator interface here
 		const_iterator
-		front() const
-		{
-			return const_iterator(_data.front(), _valid.front());
-		}
-		
-		iterator
-		front()
-		{
-			return iterator(_data.front(), _valid.front());
-		}
-		
-		const_iterator
 		back() const
 		{
-			return const_iterator(_data.back(), _valid.back());
+			return const_iterator(_data.back(), _valid.back(), 0);
 		}
 
 		iterator
 		back()
 		{
-			return iterator(_data.back(), _valid.back());
+			return iterator(_data.back(), _valid.back(), 0);
 		}
 
 		const_iterator
 		begin() const 
 		{
-			const_iterator result(_data.begin(), _valid.begin());
+			const_iterator result(_data.begin(), _valid.begin(), _data.count());
 
 			if (*result._flag_it == false)
 				++result;
@@ -208,7 +210,7 @@ namespace ecs
 		const_iterator
 		cbegin() const
 		{
-			const_iterator result(_data.begin(), _valid.begin());
+			const_iterator result(_data.begin(), _valid.begin(), _data.count());
 
 			if (*result._flag_it == false)
 				++result;
@@ -219,7 +221,7 @@ namespace ecs
 		iterator
 		begin()
 		{
-			iterator result(_data.begin(), _valid.begin());
+			iterator result(_data.begin(), _valid.begin(), _data.count());
 
 			if (*result._flag_it == false)
 				++result;
@@ -230,26 +232,26 @@ namespace ecs
 		const_iterator
 		end() const
 		{
-			return const_iterator(_data.end(), _valid.end());
+			return const_iterator(_data.end(), _valid.end(), 0);
 		}
 
 		const_iterator
 		cend() const
 		{
-			return const_iterator(_data.end(), _valid.end());
+			return const_iterator(_data.end(), _valid.end(), 0);
 		}
 
 		iterator
 		end()
 		{
-			return iterator(_data.end(), _valid.end());
+			return iterator(_data.end(), _valid.end(), 0);
 		}
 	};
 
 	template<typename T>
 	struct bag_iterator
 	{
-		using iterator_category = std::random_access_iterator_tag;
+		using iterator_category = std::forward_iterator_tag;
 		using value_type = T;
 		using difference_type = cpprelude::isize;
 		using pointer = T*;
@@ -257,10 +259,11 @@ namespace ecs
 		using data_type = T;
 		cpprelude::sequential_iterator<value_type> _element_it;
 		cpprelude::sequential_iterator<bool> _flag_it;
-		
+		cpprelude::usize _size = 0;
 
-		bag_iterator(value_type* _element, bool* flag)
-			:_element_it(_element), _flag_it(flag)
+
+		bag_iterator(value_type* _element, bool* flag, cpprelude::usize size)
+			:_element_it(_element), _flag_it(flag), _size(size)
 		{}
 		
 		bag_iterator&
@@ -268,11 +271,13 @@ namespace ecs
 		{
 			++_flag_it;
 			++_element_it;
+			--_size;
 
-			while(*_flag_it == false)
+			while(*_flag_it == false && _size > 0)
 			{
 				++_flag_it;
 				++_element_it;
+				--_size;
 			}
 
 			return *this;	
@@ -285,46 +290,16 @@ namespace ecs
 
 			++_flag_it;
 			++_element_it;
+			--_size;
 
-			while(*_flag_it == false)
+			while(*_flag_it == false && _size > 0)
 			{
 				++_flag_it;
 				++_element_it;
+				--_size;
 			}
 		}
 
-		bag_iterator&
-		operator--()
-		{
-			--_flag_it;
-			--_element_it;
-
-			while(*_flag_it == false)
-			{
-				--_flag_it;
-				--_element_it;
-			}
-
-			return *this;
-		}
-
-		bag_iterator&
-		operator--(int)
-		{
-			auto result = *this;
-
-			--_flag_it;
-			--_element_it;
-
-			while(*_flag_it == false)
-			{
-				--_flag_it;
-				--_element_it;
-			}
-
-			return *this;
-		}
-		
 		bool operator==(const bag_iterator& other) const
 		{
 			return _flag_it == other._flag_it &&
@@ -349,11 +324,12 @@ namespace ecs
 		{
 			return _element_it;
 		}
-
+		
 		value_type&
-		operator*() const
+		operator*()
 		{
 			return *_element_it;
 		}
+	
 	};
 }

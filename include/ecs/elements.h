@@ -47,7 +47,7 @@ namespace ecs
 	{
 		if (d == nullptr) return;
 		T* data = (T*)d;
-		auto data_slice = make_slice(data);
+		auto data_slice = cpprelude::make_slice(data);
 		_context->free(data_slice);
 		d = nullptr;
 	}

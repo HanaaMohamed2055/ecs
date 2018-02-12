@@ -1,7 +1,5 @@
 #pragma once
 
-#include <functional>
-
 #include <cpprelude/defines.h>
 #include <cpprelude/memory_context.h>
 #include <cpprelude/platform.h>
@@ -12,7 +10,6 @@
 #include <ecs/elements.h>
 #include <ecs/bag.h> 
 
-using namespace cpprelude;
 
 namespace ecs
 {	
@@ -21,29 +18,28 @@ namespace ecs
 	{
 		bag<Entity> entity_bag;
 		bag<Internal_Component> component_bag;
-		memory_context* _context;
+		cpprelude::memory_context* _context;
 
-		hash_array<u64, dynamic_array<u64>> entity_components;
-		hash_array<cpprelude::string, dynamic_array<u64>> component_types;
+		cpprelude::hash_array<cpprelude::u64, cpprelude::dynamic_array<cpprelude::u64>> entity_components;
+		cpprelude::hash_array<cpprelude::string, cpprelude::dynamic_array<cpprelude::u64>> component_types;
 
-		World(memory_context* context = platform->global_memory)
+		World(cpprelude::memory_context* context = cpprelude::platform->global_memory)
 			:_context(context)
 		{}
 		
 
 		Entity make_entity()
 		{
-			u64 id = entity_bag.insert(Entity());
+			cpprelude::u64 id = entity_bag.insert(Entity());
 			entity_bag[id].id = id;
 			entity_bag[id].world = this;
 			return entity_bag[id];
 		}
 
-
 		template<typename T>
-		Component<T> make_component(T data, u64 entity_id, string name = "")
+		Component<T> make_component(T data, cpprelude::u64 entity_id, cpprelude::string name = "")
 		{
-			u64 id = component_bag.insert(Internal_Component());
+			cpprelude::u64 id = component_bag.insert(Internal_Component());
 
 			// initialize component
 			auto& component = component_bag[id];
@@ -69,10 +65,10 @@ namespace ecs
 		//if no ID or invalid ID was supplied, all components of the type specified
 		//will be returned
 		template<typename T>
-		dynamic_array<Component<T>> get_components_by_type(u64 entity_id = INVALID_ID)
+		cpprelude::dynamic_array<Component<T>> get_components_by_type(cpprelude::u64 entity_id = INVALID_ID)
 		{
-			dynamic_array<Component<T>> components; 
-			cpprelude:string key = typeid(T).name();
+			cpprelude::dynamic_array<Component<T>> components; 
+			cpprelude::string key = typeid(T).name();
 
 			if(component_types.lookup(key) != component_types.end())
 			{
@@ -89,9 +85,9 @@ namespace ecs
 		}
 
 
-		dynamic_array<Internal_Component*> get_all_components(u64 entity_id)
+		cpprelude::dynamic_array<Internal_Component*> get_all_components(cpprelude::u64 entity_id)
 		{
-			dynamic_array<Internal_Component*> components;
+			cpprelude::dynamic_array<Internal_Component*> components;
 			
 			if(entity_id != INVALID_ID)
 			{
@@ -104,11 +100,11 @@ namespace ecs
 		}
 	
 
-		void kill_entity(u64 entity_id)
+		void kill_entity(cpprelude::u64 entity_id)
 		{
 			auto& component_ids = entity_components[entity_id];
 
-			for (u64 cid: component_ids)
+			for (cpprelude::u64 cid: component_ids)
 			{
 				remove_component(cid, false);
 			}
@@ -117,7 +113,7 @@ namespace ecs
 		}
 
 
-		void remove_component(u64 component_id, bool unbind_from_entity = true)
+		void remove_component(cpprelude::u64 component_id, bool unbind_from_entity = true)
 		{
 			auto& container = component_types[component_bag[component_id].type];
 			
@@ -136,16 +132,10 @@ namespace ecs
 		
 		void clean_up()
 		{
-			//here, we should iterate on remaining valid components and destroy them (free the memory they allocated)
-			for (auto it = component_bag.begin(); it != component_bag.end(); ++it)
-			{
-				std::cout << "valid\n";
-			}
-
-			//for (auto c : component_bag)
-			//{
-
-			//}
+			// here, we should iterate on remaining valid components and destroy them 
+			// free the memory allocated that will not be freed by ~bag()
+			for (auto& component : component_bag)
+				component.destroy(_context);
 		}
 
 

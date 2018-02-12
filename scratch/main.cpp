@@ -16,19 +16,20 @@ int main()
 	auto component4 = w.make_component<cpprelude::r32>(929.923, entity2.id);
 	auto component5 = w.make_component<cpprelude::u32>(9, entity2.id);
 
-	auto e1 = w.get_components_by_type<cpprelude::u32>(entity1.id);
+	auto e1 = w.get_entity_components<cpprelude::u32>(entity1.id);
 	for (auto e: e1)
 		std::cout << e.get_data() << std::endl;
 	
 	std::cout << "-------------------------------\n";
-	auto e2 = w.get_all_components(entity2.id);
+	auto e2 = w.get_all_entity_components(entity2.id);
 	for (auto e : e2)
 		std::cout << e->id << std::endl;
 
 	std::cout << "--------------------------------\n";
-	w.kill_entity(entity1.id);
-	w.kill_entity(entity2.id);
-	e1 = w.get_components_by_type<cpprelude::u32>(0);
+	//w.kill_entity(entity1.id);
+	//w.kill_entity(entity2.id);
+	e1 = w.get_entity_components<cpprelude::u32>(INVALID_ID);
+	e1 = w.get_world_components<cpprelude::u32>();
 	for (auto e : e1)
 		std::cout << e.get_data() << std::endl;
 }

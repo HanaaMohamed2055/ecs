@@ -45,12 +45,12 @@ namespace ecs
 			new (component._data) T(data);
 			component._destroy = internal_component_dispose<T>;
 			component.world = this;
-			cpprelude::string key = typeid(T).name();
+			cpprelude::string key = cpprelude::string(typeid(T).name(), _context);
 			component.type = key;
 			component.name = name;
 
 			// bind the component to the entity and cache its type
-			if(entity_id != INVALID_ID)
+			if (entity_id != INVALID_ID)
 				entity_components[entity_id].insert_back(id);
 			component_types[key].insert_back(id);
 
@@ -60,30 +60,52 @@ namespace ecs
 
 		template<typename T>
 		cpprelude::dynamic_array<Component<T>> 
-		get_components_by_type(cpprelude::u64 entity_id)
+		get_entity_components(cpprelude::u64 entity_id)
 		{
 			cpprelude::dynamic_array<Component<T>> components; 
-			cpprelude::string key = typeid(T).name();
-
-			if(component_types.lookup(key) != component_types.end())
+			
+			if (entity_id != INVALID_ID)
 			{
-				auto& container = component_types[key];
-				for(auto index: container)
+				cpprelude::string key = cpprelude::string(typeid(T).name(), _context);
+				auto typed_components = component_types.lookup(key);
+
+				if (typed_components != component_types.end())
 				{
-					if(entity_id != INVALID_ID && component_bag[index].entity_id != entity_id)
-						continue;
-					components.insert_back(&component_bag[index]);
+					auto& container = typed_components.value();
+					for (auto index : container)
+					{
+						if (component_bag[index].entity_id != entity_id)
+							continue;
+						components.insert_back(&component_bag[index]);
+					}
 				}
 			}
-
 			return components;
 		}
 
 
 		API_ECS cpprelude::dynamic_array<Internal_Component*>
-		get_all_components(cpprelude::u64 entity_id);
+		get_all_entity_components(cpprelude::u64 entity_id);
 
-	
+		template<typename T>
+		cpprelude::dynamic_array<Component<T>> 
+		get_world_components()
+		{
+			cpprelude::dynamic_array<Component<T>> components;
+			cpprelude::string key = cpprelude::string(typeid(T).name(), _context);
+			auto typed_components = component_types.lookup(key);
+
+			if (typed_components != component_types.end())
+			{
+				auto& container = typed_components.value();
+				for (auto index : container)
+				{
+					components.insert_back(&component_bag[index]);
+				}
+			}
+			return components;
+		}
+
 		API_ECS void
 		kill_entity(cpprelude::u64 entity_id);
 

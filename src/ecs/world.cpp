@@ -26,7 +26,7 @@ namespace ecs
 
 
 	cpprelude::dynamic_array<Internal_Component*>
-	World::get_all_components(cpprelude::u64 entity_id)
+	World::get_all_entity_components(cpprelude::u64 entity_id)
 	{
 		cpprelude::dynamic_array<Internal_Component*> components;
 
@@ -57,6 +57,7 @@ namespace ecs
 			container.remove_back();
 		}
 	}
+
 
 	void
 	World::clean_up()

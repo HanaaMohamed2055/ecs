@@ -1,6 +1,9 @@
 project "ecs"
 	kind "SharedLib"
 	language "C++"
+	targetdir (bin_path .. "/%{cfg.platform}/%{cfg.buildcfg}/")
+	location (build_path .. "/ecs/")
+
 
 	files {"include/**.h", "src/**.cpp"}
 
@@ -14,6 +17,9 @@ project "ecs"
 		buildoptions {"-std=c++14", "-Wall", "-fno-rtti", "-fno-exceptions"}
 		linkoptions {"-pthread"}
 
+		filter "configurations:debug"
+			linkoptions {"-rdynamic"}
+
 	elseif os.istarget("windows") then
 
 		if os.getversion().majorversion == 10.0 then
@@ -25,11 +31,12 @@ project "ecs"
 
 
 	filter "configurations:debug"
-		defines "DEBUG"
+		targetsuffix "d"
+		defines {"DEBUG", "ECS_DLL"}
 		symbols "On"
 
 	filter "configurations:release"
-		defines "NDEBUG"
+		defines {"NDEBUG", "ECS_DLL"}
 		optimize "On"
 
 	filter "platforms:x86"

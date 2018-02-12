@@ -9,7 +9,7 @@
 
 #include <ecs/elements.h>
 #include <ecs/bag.h> 
-
+#include <ecs/api.h>
 
 namespace ecs
 {	
@@ -26,18 +26,13 @@ namespace ecs
 		World(cpprelude::memory_context* context = cpprelude::platform->global_memory)
 			:_context(context)
 		{}
-		
 
-		Entity make_entity()
-		{
-			cpprelude::u64 id = entity_bag.insert(Entity());
-			entity_bag[id].id = id;
-			entity_bag[id].world = this;
-			return entity_bag[id];
-		}
+		API_ECS Entity
+		make_entity();
 
 		template<typename T>
-		Component<T> make_component(T data, cpprelude::u64 entity_id, cpprelude::string name = "")
+		Component<T>
+		make_component(T data, cpprelude::u64 entity_id, cpprelude::string name = "")
 		{
 			cpprelude::u64 id = component_bag.insert(Internal_Component());
 

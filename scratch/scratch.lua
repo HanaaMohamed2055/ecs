@@ -11,7 +11,7 @@ project "scratch"
 		cpprelude_path .. "/include",
 	}
 
-	links {"cpprelude"}
+	links {"cpprelude", "ecs"}
 
 	if os.istarget("linux") then
 

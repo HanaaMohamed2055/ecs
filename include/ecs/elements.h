@@ -29,17 +29,18 @@ namespace ecs
 		World* world = nullptr;
 		free_func _destroy = nullptr;
 
+		Internal_Component()
+		{}
+
+		Internal_Component(cpprelude::u64 cid, cpprelude::u64 eid, const cpprelude::string& ctype, const cpprelude::string& cname = "")
+			:id(cid), entity_id(eid), type(ctype), name(cname)
+		{}
+		
 		void
 		destroy(cpprelude::memory_context* context)
 		{
 			_destroy(_data, context);
 			world = nullptr;
-		}
-
-		~Internal_Component()
-		{
-			//destroy();
-			//for now, we wil leave it like that
 		}
 	};
 

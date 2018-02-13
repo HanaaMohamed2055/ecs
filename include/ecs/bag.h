@@ -7,30 +7,9 @@
 #include <cpprelude/memory_context.h>
 #include <cpprelude/iterator.h> 
 
+#define RESERVED 8
 namespace ecs
 {
-	namespace details
-	{
-		template<typename T>
-		struct cell
-		{
-			T _content;
-			bool is_valid;
-			
-			cell(T&& data)
-			{
-				_content = std::move(data);
-				is_valid = true;
-			}
-
-			cell(T& data)
-			{
-				_content = data;
-				is_valid = true;
-			}
-		};
-	}
-
 	template<typename T>
 	struct bag_iterator;
 
@@ -46,12 +25,14 @@ namespace ecs
 		cpprelude::dynamic_array<bool> _valid;
 		cpprelude::stack_array<cpprelude::usize> _free_indices;
 
+		cpprelude::isize _last_valid = -1;
+		
 		//more constructors could be added
 		bag(cpprelude::memory_context* context = cpprelude::platform->global_memory)
 			:_data(context),
 			_free_indices(context)
 		{
-			reserve(8);
+			reserve(RESERVED);
 		}
 
 		~bag()
@@ -64,17 +45,19 @@ namespace ecs
 		emplace(TArgs&& ... args)
 		{
 			cpprelude::usize place = _data.count();
-			_valid.insert_back(true);
-
+		
 			if (!_free_indices.empty())
 			{
 				place = _free_indices.top();
 				_free_indices.pop();
+				if (place > _last_valid)
+					_last_valid = place;
 				new (_data.data() + place) T(std::forward<TArgs>(args)...);
 				_valid[place] = true;
 				return place;
 			}
 
+			++_last_valid;
 			_valid.insert_back(true);
 			_data.emplace_back(std::forward<TArgs>(args)...);
 			return place;
@@ -84,16 +67,19 @@ namespace ecs
 		insert(const T& value)
 		{
 			cpprelude::usize place = _data.count();
-			
+		
 			if (!_free_indices.empty())
 			{
 				place = _free_indices.top();
 				_free_indices.pop();
+				if (place > _last_valid) 
+					_last_valid = place;
 				new (_data.data() + place) T(value);
 				_valid[place] = true;
 				return place;
 			}
 
+			++_last_valid;
 			_valid.insert_back(true);
 			_data.emplace_back(value);
 			return place;
@@ -103,16 +89,19 @@ namespace ecs
 		insert(T&& value)
 		{
 			cpprelude::usize place = _data.count();
-			
+
 			if (!_free_indices.empty())
 			{
 				place = _free_indices.top();
 				_free_indices.pop();
+				if (place > _last_valid)
+					_last_valid = place;
 				new (_data.data() + place) T(std::move(value));
 				_valid[place] = true;
 				return place;
 			}
 
+			++_last_valid;
 			_valid.insert_back(true);
 			_data.emplace_back(std::move(value));
 			return place;
@@ -124,6 +113,8 @@ namespace ecs
 			_valid[index] = false;
 			_data[index].~T();
 			_free_indices.push(index);
+			if (_last_valid == index) 
+				--_last_valid;
 		}
 
 		T&
@@ -153,7 +144,7 @@ namespace ecs
 		cpprelude::usize
 		capacity() const
 		{
-			return _data.capacity()
+			return _data.capacity();
 		}
 
 		bool
@@ -169,8 +160,8 @@ namespace ecs
 			cpprelude::usize available_size = _data.capacity() - _data.count() + _free_indices.count();
 			if (available_size >= expected_size)
 				return;
-			_data.reserve(expected_size - available_size);
-			_valid.reserve(expected_size - available_size);
+			_data.reserve(expected_size);
+			_valid.reserve(expected_size);
 		}
 		
 		void
@@ -188,13 +179,19 @@ namespace ecs
 		const_iterator
 		back() const
 		{
-			return const_iterator(_data.back(), _valid.back(), 0);
+			if (last_valid >= 0 && last_valid < _data.count())
+				return const_iterator(_data._data_block.ptr + last_valid, _valid._data_block.ptr + last_valid, 0);
+			else
+				return end();
 		}
 
 		iterator
 		back()
 		{
-			return iterator(_data.back(), _valid.back(), 0);
+			if (_last_valid >= 0 && _last_valid < _data.count())
+				return iterator(_data._data_block.ptr + _last_valid, _valid._data_block.ptr + _last_valid, 0);
+			else
+				return end();
 		}
 
 		const_iterator

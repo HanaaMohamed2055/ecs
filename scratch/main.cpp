@@ -3,6 +3,7 @@
 
 
 using namespace ecs;
+using namespace cpprelude;
 
 int main()
 {
@@ -32,5 +33,6 @@ int main()
 	e1 = w.get_world_components<cpprelude::u32>();
 	for (auto e : e1)
 		std::cout << e.get_data() << std::endl;
+
 }
 

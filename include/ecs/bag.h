@@ -263,6 +263,10 @@ namespace ecs
 		bag_iterator(value_type* _element, bool* flag, cpprelude::usize size)
 			:_element_it(_element), _flag_it(flag), _size(size)
 		{}
+
+		bag_iterator(const bag_iterator<T>& other)
+			:_element_it(other._element_it._element), _flag_it(other._flag_it._element), _size(other._size)
+		{}
 		
 		bag_iterator&
 		operator++()
@@ -296,6 +300,8 @@ namespace ecs
 				++_element_it;
 				--_size;
 			}
+
+			return result;
 		}
 
 		bool operator==(const bag_iterator& other) const

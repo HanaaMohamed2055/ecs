@@ -1,5 +1,6 @@
 #include <cpprelude/defines.h>
 #include <ecs/world.h>
+#include <ecs/utility.h> 
 
 
 using namespace ecs;
@@ -25,14 +26,32 @@ int main()
 	auto e2 = w.get_all_entity_components(entity2.id);
 	for (auto e : e2)
 		std::cout << e->id << std::endl;
+	
+	std::cout << "--------------------------------\n";
+	auto e3 = w.get_all_entity_components(entity2.id);
+	for (auto e : e3)
+		std::cout << e->id << std::endl;
 
 	std::cout << "--------------------------------\n";
 	//w.kill_entity(entity1.id);
 	//w.kill_entity(entity2.id);
-	e1 = w.get_entity_components<cpprelude::u32>(INVALID_ID);
+	/*e1 = w.get_entity_components<cpprelude::u32>(INVALID_ID);
 	e1 = w.get_world_components<cpprelude::u32>();
 	for (auto e : e1)
-		std::cout << e.get_data() << std::endl;
+		std::cout << e.get_data() << std::endl;*/
+
+	type_iterator<r32> u32_it(w.component_bag.begin(), w.component_bag.end());
+	type_iterator<r32> end_it(w.component_bag.end(), w.component_bag.end());
+
+	std::cout << u32_it.data() << std::endl;
+	++u32_it;
+
+	auto& data = u32_it.data();
+	data = 23.488;
+	std::cout << *(static_cast<r32*>(w.component_bag[3]._data)) << std::endl;
+	++u32_it;
+
+	
 
 }
 

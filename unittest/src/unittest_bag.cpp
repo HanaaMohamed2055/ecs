@@ -124,7 +124,6 @@ TEST_CASE("bag container test", "[bag]")
 	SECTION("Case 05")
 	{
 		// test reusing after removal
-
 		CHECK(component_test_bag.count() == 0);
 		CHECK(component_test_bag.capacity() == RESERVED);
 
@@ -161,7 +160,6 @@ TEST_CASE("bag container test", "[bag]")
 	SECTION("Case 06")
 	{
 		// test for loops using iterators and range-based loop
-
 		CHECK(component_test_bag.count() == 0);
 		CHECK(component_test_bag.capacity() == RESERVED);		
 	

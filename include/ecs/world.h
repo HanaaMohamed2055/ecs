@@ -20,7 +20,7 @@ namespace ecs
 		bag<Internal_Component> component_bag;
 		cpprelude::memory_context* _context;
 
-		cpprelude::hash_array<cpprelude::u64, cpprelude::dynamic_array<cpprelude::u64>> entity_components;
+		cpprelude::hash_array<cpprelude::u64, cpprelude::dynamic_array<Internal_Component*>> entity_components;
 		cpprelude::hash_array<cpprelude::string, cpprelude::dynamic_array<cpprelude::u64>> component_types;
 
 		World(cpprelude::memory_context* context = cpprelude::platform->global_memory)
@@ -51,7 +51,7 @@ namespace ecs
 
 			// bind the component to the entity and cache its type
 			if (entity_id != INVALID_ID)
-				entity_components[entity_id].insert_back(id);
+				entity_components[entity_id].insert_back(&component);
 			component_types[key].insert_back(id);
 
 			return &component;
@@ -84,7 +84,7 @@ namespace ecs
 		}
 
 
-		API_ECS cpprelude::dynamic_array<Internal_Component*>
+		API_ECS cpprelude::dynamic_array<Internal_Component*>&
 		get_all_entity_components(cpprelude::u64 entity_id);
 
 		template<typename T>
@@ -110,7 +110,6 @@ namespace ecs
 		kill_entity(cpprelude::u64 entity_id);
 
 		
-
 		API_ECS void
 		remove_component(cpprelude::u64 component_id, bool unbind_from_entity = true);
 		

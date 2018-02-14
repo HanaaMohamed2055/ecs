@@ -1,3 +1,7 @@
+# pragma once
+
+#include <cpprelude/defines.h>
+
 #include <ecs/elements.h>
 #include <ecs/bag.h>
 
@@ -14,24 +18,33 @@ namespace ecs
 		using reference = T&;
 		using data_type = T;
 
-		cpprelude::string _type = typeid(T).name(); 
+		cpprelude::string _type;
+		cpprelude::usize _size = 0;
 		bag_iterator<Internal_Component> _element_it;
-		bag_iterator<Internal_Component> _limit;
-
-		type_iterator(const bag_iterator<Internal_Component>& other, const bag_iterator<Internal_Component>& end)
-			:_element_it(other), _limit(end)
+	
+		type_iterator(const bag_iterator<Internal_Component>& other, cpprelude::usize size, cpprelude::memory_context* context = platform->global_memory)
+			:_element_it(other), _size(size)
 		{
-			while(_element_it != _limit && _element_it->type != _type)
+			_type = cpprelude::string(typeid(T).name(), context);
+			
+			while (_size > 0 && _element_it->type != _type)
+			{
 				++_element_it;
+				--_size;
+			}
 		}
 
 		type_iterator&
 		operator++()
 		{
 			++_element_it;
+			--_size;
 
-			while(_element_it != _limit && _element_it->type != _type)
-				++_element_it;	
+			while (_size > 0 && _element_it->type != _type)
+			{
+				++_element_it;
+				--_size;
+			}
 
 			return *this;
 		}		
@@ -41,16 +54,20 @@ namespace ecs
 		{
 			auto result = *this;
 			++_element_it;
+			--_size;
 
-			while(_element_it != _limit && _element_it->type != _type)
+			while (_size > 0 && _element_it->type != _type)
+			{
 				++_element_it;
+				--_size;
+			}
 
 			return result;
 		}
 
 		bool operator==(const type_iterator& other) const
 		{
-			return _element_it == other;
+			return _element_it == other._element_it;
 		}
 
 		bool operator!=(const type_iterator& other) const
@@ -62,6 +79,12 @@ namespace ecs
 		data()
 		{
 			return *(static_cast<T*>(_element_it->_data));
+		}
+
+		const value_type&
+		data() const
+		{
+			return *(static_cast<T*>(_element_it->_data))
 		}
 
 		Internal_Component&
@@ -81,7 +104,6 @@ namespace ecs
 		{
 			return *_element_it;
 		}
-
 	};
 
 	template<typename T, typename cpprelude::u64 entity_id>

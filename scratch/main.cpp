@@ -40,18 +40,14 @@ int main()
 	for (auto e : e1)
 		std::cout << e.get_data() << std::endl;*/
 
-	type_iterator<r32> u32_it(w.component_bag.begin(), w.component_bag.end());
-	type_iterator<r32> end_it(w.component_bag.end(), w.component_bag.end());
+	type_iterator<r32> u32_it(w.component_bag.begin(), w.component_bag.count());
+	type_iterator<r32> end(w.component_bag.end(), 0);
 
-	std::cout << u32_it.data() << std::endl;
-	++u32_it;
-
-	auto& data = u32_it.data();
-	data = 23.488;
-	std::cout << *(static_cast<r32*>(w.component_bag[3]._data)) << std::endl;
-	++u32_it;
-
-	
+	while (u32_it!= end)
+	{
+		std::cout << u32_it.data() << std::endl;
+		++u32_it;
+	}
 
 }
 

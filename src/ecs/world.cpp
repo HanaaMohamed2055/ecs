@@ -15,20 +15,26 @@ namespace ecs
 	void
 	World::kill_entity(cpprelude::u64 entity_id)
 	{
-		auto& components = entity_components[entity_id];
+		auto& component_ids = entity_components[entity_id];
 		
-		for (auto component: components)
-			remove_component(component->id, false);
+		for (auto cid: component_ids)
+			remove_component(cid, false);
 
-		components.clear();
+		component_ids.clear();
 		entity_bag.remove(entity_id);
 	}
 
 
-	cpprelude::dynamic_array<Internal_Component*>&
+	cpprelude::dynamic_array<Internal_Component*>
 	World::get_all_entity_components(cpprelude::u64 entity_id)
 	{
-		return entity_components[entity_id];
+		cpprelude::dynamic_array<Internal_Component*> result;
+		auto& component_ids = entity_components[entity_id];
+
+		for (auto cid: component_ids)
+			result.insert_back(&component_bag[cid]);
+
+		return result;
 	}
 
 
@@ -47,6 +53,7 @@ namespace ecs
 			std::swap(container[index], container[container.count() - 1]);
 			container.remove_back();
 		}
+
 	}
 
 

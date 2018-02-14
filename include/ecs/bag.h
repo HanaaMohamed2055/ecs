@@ -334,6 +334,6 @@ namespace ecs
 		{
 			return *_element_it;
 		}
-	
+
 	};
 }

@@ -40,14 +40,22 @@ int main()
 	for (auto e : e1)
 		std::cout << e.get_data() << std::endl;*/
 
-	type_iterator<r32> u32_it(w.component_bag.begin(), w.component_bag.count());
-	type_iterator<r32> end(w.component_bag.end(), 0);
+	//type_iterator<r32> u32_it(w.component_bag.begin(), w.component_bag.count());
+	//type_iterator<r32> end(w.component_bag.end(), 0);
 
-	while (u32_it!= end)
+	//while (u32_it!= end)
+	//{
+	//	std::cout << u32_it.data() << std::endl;
+	//	++u32_it;
+	//}
+	const auto id = entity1.id;
+	entity_type_iterator<u32> e1_it(w.component_bag.begin(), w.component_bag.count(), 1);
+	entity_type_iterator<u32> end(w.component_bag.end(), 0, 1);
+	
+	while (e1_it != end)
 	{
-		std::cout << u32_it.data() << std::endl;
-		++u32_it;
+		std::cout << e1_it.data() << std::endl;
+		++e1_it;
 	}
-
 }
 

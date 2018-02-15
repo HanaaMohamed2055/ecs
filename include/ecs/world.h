@@ -16,9 +16,6 @@ namespace ecs
 	{
 		using component_types_table = cpprelude::hash_array<cpprelude::string, cpprelude::dynamic_array<Internal_Component>>;
 
-		template<typename T>
-		using view = std::pair<type_iterator<T>, type_iterator<T>>;
-
 		bag<Entity> entity_bag;
 		cpprelude::hash_array<cpprelude::u64, component_types_table> ledger;
 		cpprelude::memory_context* _context;
@@ -66,14 +63,15 @@ namespace ecs
 		}
 
 		template<typename T>
-		view<T> get_all(Entity e)
+		type_view<T> get_all(Entity e)
 		{
 			assert(has<T>(e) == true);
 			auto& container = ledger[e.id][typeid(T).name()];
 			
-			return view<T>(type_iterator<T> begin(container.begin(), container.count()),
-			               type_iterator<T> end(container.end(), 0));	
+			type_iterator<T> begin(container.begin(), container.count());
+			type_iterator<T> end(container.end(), 0);
 
+			return type_view<T>(begin, end);
 		}
 
 		

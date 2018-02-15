@@ -25,16 +25,22 @@ namespace ecs
 			:_element_it(_element), _size(size)
 		{}
 
+		type_iterator(const type_iterator& itr)
+			:_element_it(itr._element_it._element), _size(itr._size)
+		{}
+
 		type_iterator&
 		operator++()
 		{
-			return ++_element_it;
+			 ++_element_it;
+			 return *this;
 		}
 
 		type_iterator&
 		operator++(int)
 		{
-			return _element_it++:
+			
+			_element_it++:
 		}
 
 		bool operator==(const type_iterator& other) const
@@ -75,6 +81,43 @@ namespace ecs
 		operator*()
 		{
 			return *_element_it;
+		}
+	};
+
+	template<typename T>
+	struct type_view
+	{
+		type_iterator<T> _begin, _current, _end;
+		
+		type_view(const type_iterator<T>& begin, const type_iterator<T>& end)
+			:_begin(begin), _current(begin), _end(end)
+		{}
+
+		type_iterator<T> next()
+		{
+			if (_current != _end)
+				++_current;
+			else
+				{
+					_current = _begin;
+				}
+			return _current;
+		}
+
+		bool end()
+		{
+			return _current == _end;
+		}
+
+		type_iterator<T> reset()
+		{
+			_current = _begin;
+		}
+
+		T& data()
+		{
+			assert(_current != _end);
+			return _current.data();
 		}
 	};
 }

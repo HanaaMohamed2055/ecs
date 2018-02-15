@@ -1,126 +1,81 @@
 #pragma once
-
-#include <cpprelude/defines.h>
-#include <cpprelude/memory_context.h>
-#include <cpprelude/platform.h>
-#include <cpprelude/string.h>
 #include <cpprelude/hash_array.h>
-#include <cpprelude/dynamic_array.h>
+#include <cpprelude/string.h>
 
 #include <ecs/elements.h>
-#include <ecs/bag.h> 
+#include <ecs/bag.h>
+#include <ecs/utility.h>
 #include <ecs/api.h>
 
 namespace ecs
-{	
+{
+	API_ECS bool dummy();
+	
 
 	struct World
 	{
-		bag<Entity> entity_bag;
-		bag<Internal_Component> component_bag;
-		cpprelude::memory_context* _context;
+		using component_types_table = cpprelude::hash_array<cpprelude::string, cpprelude::dynamic_array<Internal_Component>>;
 
-		cpprelude::hash_array<cpprelude::u64, cpprelude::dynamic_array<cpprelude::u64>> entity_components;
-		cpprelude::hash_array<cpprelude::string, cpprelude::dynamic_array<cpprelude::u64>> component_types;
+		template<typename T>
+		using view = std::pair<type_iterator<T>, type_iterator<T>>;
+
+		bag<Entity> entity_bag;
+		cpprelude::hash_array<cpprelude::u64, component_types_table> ledger;
+		cpprelude::memory_context* _context;
 
 		World(cpprelude::memory_context* context = cpprelude::platform->global_memory)
 			:_context(context)
 		{}
 
-		API_ECS	Entity
-		make_entity();
-		
-
-		template<typename T>
-		Component<T>
-		make_component(T data, cpprelude::u64 entity_id, cpprelude::string name = "")
+		Entity create_entity()
 		{
-			cpprelude::u64 id = component_bag.insert(Internal_Component());
-
-			// initialize component
-			auto& component = component_bag[id];
-			component.id = id;
-			component.entity_id = entity_id;
-			component._data = _context->alloc<T>();
-			new (component._data) T(data);
-			component._destroy = internal_component_dispose<T>;
-			component.world = this;
-			cpprelude::string key = cpprelude::string(typeid(T).name(), _context);
-			component.type = key;
-			component.name = name;
-
-			// bind the component to the entity and cache its type
-			if (entity_id != INVALID_ID)
-				entity_components[entity_id].insert_back(id);
-			component_types[key].insert_back(id);
-			
-			return &component;
+			cpprelude::u64 id = entity_bag.insert(Entity());
+			entity_bag[id].id = id;
+			entity_bag[id].world = this;
+			return entity_bag[id];
 		}
 
-
 		template<typename T>
-		cpprelude::dynamic_array<Component<T>> 
-		get_entity_components(cpprelude::u64 entity_id)
+		T& add_property(Entity e, T data)
 		{
-			cpprelude::dynamic_array<Component<T>> components; 
-			
-			if (entity_id != INVALID_ID)
-			{
-				cpprelude::string key(typeid(T).name(), _context);
-				auto typed_components = component_types.lookup(key);
-
-				if (typed_components != component_types.end())
-				{
-					auto& container = typed_components.value();
-					for (auto index : container)
-					{
-						if (component_bag[index].entity_id != entity_id)
-							continue;
-						components.insert_back(&component_bag[index]);
-					}
-				}
-			}
-			return components;
-		}
-
-
-		API_ECS cpprelude::dynamic_array<Internal_Component*>
-		get_all_entity_components(cpprelude::u64 entity_id);
-
-		template<typename T>
-		cpprelude::dynamic_array<Component<T>> 
-		get_world_components()
-		{
-			cpprelude::dynamic_array<Component<T>> components;
 			cpprelude::string key(typeid(T).name(), _context);
-			auto typed_components = component_types.lookup(key);
+			ledger[e.id][key].insert_back(Internal_Component());
+			auto& container = ledger[e.id][key];
+			auto& component = container[container.count() - 1];
 
-			if (typed_components != component_types.end())
-			{
-				auto& container = typed_components.value();
-				for (auto index : container)
-				{
-					components.insert_back(&component_bag[index]);
-				}
-			}
-			return components;
+			component.type = key;
+			component.data = _context->alloc<T>();
+			new (component.data) T(data);
+			component.destroy = internal_component_dispose<T>;
+
+			return *(static_cast<T*>(component.data));	
 		}
-
-		API_ECS void
-		kill_entity(cpprelude::u64 entity_id);
-
 		
-		API_ECS void
-		remove_component(cpprelude::u64 component_id, bool unbind_from_entity = true);
-		
-		
-		API_ECS void
-		clean_up();
-		
-
-		~World()
+		template<typename T>
+		bool has(Entity e)
 		{
-			clean_up();
+			return ((ledger.lookup(e.id) != ledger.end()) &&
+				(ledger[e.id].lookup(typeid(T).name()) != ledger[e.id].end()));
 		}
+
+		template<typename T>
+		T& get(Entity e)
+		{	
+			assert(has<T>(e) == true);
+			return *(static_cast<T*>(ledger[e.id][typeid(T).name()][0].data));
+		}
+
+		template<typename T>
+		view<T> get_all(Entity e)
+		{
+			assert(has<T>(e) == true);
+			auto& container = ledger[e.id][typeid(T).name()];
+			
+			return view<T>(type_iterator<T> begin(container.begin(), container.count()),
+			               type_iterator<T> end(container.end(), 0));	
+
+		}
+
+		
 	};
 }

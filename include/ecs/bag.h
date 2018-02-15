@@ -34,7 +34,7 @@ namespace ecs
 		{
 			reserve(RESERVED);
 		}
-
+		
 		~bag()
 		{
 			clear();

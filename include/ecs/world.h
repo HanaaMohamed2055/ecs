@@ -68,8 +68,8 @@ namespace ecs
 			assert(has<T>(e) == true);
 			auto& container = ledger[e.id][typeid(T).name()];
 			
-			type_iterator<T> begin(container.begin(), container.count());
-			type_iterator<T> end(container.end(), 0);
+			cpprelude::sequential_iterator<Internal_Component> begin(container.begin());
+			cpprelude::sequential_iterator<Internal_Component> end(container.end());
 
 			return type_view<T>(begin, end);
 		}

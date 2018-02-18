@@ -32,6 +32,30 @@ namespace ecs
 			return entity_bag[id];
 		}
 
+		Entity clone_from_Entity(Entity e)
+		{
+			auto entity = create_entity();
+			
+			auto itr = ledger.lookup(e.id);
+			if(itr != ledger.end())
+			{
+				for (auto type_itr = itr.value().begin(); type_itr != itr.value().end(); ++type_itr)
+				{
+					auto& components = type_itr.value();
+
+					for (Internal_Component c: components)
+					{
+						ledger[entity.id][type_itr.key()].insert_back(Internal_Component());
+						auto& container = ledger[entity.id][type_itr.key()];
+						auto& component = container[container.count() - 1];
+						c.copy(c.data, component, _context);
+					}
+				}
+			}
+
+			return entity;
+		}
+
 		template<typename T>
 		T& add_property(Entity e, T data)
 		{
@@ -44,6 +68,7 @@ namespace ecs
 			component.data = _context->alloc<T>();
 			new (component.data) T(data);
 			component.destroy = internal_component_dispose<T>;
+			component.copy = copy<T>;
 
 			return *(static_cast<T*>(component.data));	
 		}
@@ -70,6 +95,7 @@ namespace ecs
 				return true;
 			}
 
+			// the property 
 			return false;
 		}
 

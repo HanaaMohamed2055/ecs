@@ -24,7 +24,8 @@ namespace ecs
 			:_context(context)
 		{}
 
-		Entity create_entity()
+		Entity 
+		create_entity()
 		{
 			cpprelude::u64 id = entity_bag.insert(Entity());
 			entity_bag[id].id = id;
@@ -57,7 +58,8 @@ namespace ecs
 		}
 
 		template<typename T>
-		T& add_property(Entity e, T data)
+		T&
+		add_property(Entity e, T data)
 		{
 			cpprelude::string key(typeid(T).name(), _context);
 			ledger[e.id][key].insert_back(Internal_Component());
@@ -74,14 +76,16 @@ namespace ecs
 		}
 		
 		template<typename T>
-		bool has(Entity e)
+		bool
+		has(Entity e)
 		{
 			return ((ledger.lookup(e.id) != ledger.end()) &&
 				(ledger[e.id].lookup(typeid(T).name()) != ledger[e.id].end()));
 		}
 
 		template<typename T>
-		bool remove_property(Entity e)
+		bool
+		remove_property(Entity e)
 		{
 			if (has<T>(e))
 			{
@@ -100,14 +104,16 @@ namespace ecs
 		}
 
 		template<typename T>
-		T& get(Entity e)
+		T&
+		get(Entity e)
 		{	
 			cpprelude::string type(typeid(T).name(), _context);
 			return *(static_cast<T*>(ledger[e.id][type][0].data));
 		}
 				
 		template<typename T>
-		component_view<T> get_all(Entity e)
+		component_view<T>
+		get_all(Entity e)
 		{
 			cpprelude::string type(typeid(T).name(), _context);
 			auto& container = ledger[e.id][typeid(T).name()];
@@ -118,7 +124,8 @@ namespace ecs
 			return component_view<T>(begin, end);
 		}
 
-		void kill_entity(Entity e, bool cleanup_mode = false)
+		void
+		kill_entity(Entity e, bool cleanup_mode = false)
 		{
 			auto itr = ledger.lookup(e.id);
 			if (itr != ledger.end())
@@ -141,7 +148,8 @@ namespace ecs
 			}
 		}
 
-		void clean_up()
+		void
+		clean_up()
 		{
 			for (auto entity: entity_bag)
 			{

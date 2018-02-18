@@ -7,11 +7,11 @@
 namespace ecs
 {
 	template<typename T>
-	struct type_view
+	struct component_view
 	{
 		cpprelude::sequential_iterator<Internal_Component> _begin, _current, _end;
 
-		type_view(const cpprelude::sequential_iterator<Internal_Component>& begin, const cpprelude::sequential_iterator<Internal_Component>& end)
+		component_view(const cpprelude::sequential_iterator<Internal_Component>& begin, const cpprelude::sequential_iterator<Internal_Component>& end)
 			:_begin(begin), _current(begin), _end(end)
 		{}
 

@@ -56,22 +56,40 @@ namespace ecs
 		}
 
 		template<typename T>
-		T& get(Entity e)
-		{	
-			assert(has<T>(e) == true);
-			return *(static_cast<T*>(ledger[e.id][typeid(T).name()][0].data));
+		bool remove_property(Entity e)
+		{
+			if (has<T>(e))
+			{
+				cpprelude::string type(typeid(T).name(), _context);
+				
+				auto& components = ledger[e.id][type];
+				for (auto& c: components)
+					c.destroy(c.data, _context);
+
+				ledger[e.id].remove(type);
+				return true;
+			}
+
+			return false;
 		}
 
 		template<typename T>
-		type_view<T> get_all(Entity e)
+		T& get(Entity e)
+		{	
+			cpprelude::string type(typeid(T).name(), _context);
+			return *(static_cast<T*>(ledger[e.id][type][0].data));
+		}
+				
+		template<typename T>
+		component_view<T> get_all(Entity e)
 		{
-			assert(has<T>(e) == true);
+			cpprelude::string type(typeid(T).name(), _context);
 			auto& container = ledger[e.id][typeid(T).name()];
-			
+
 			cpprelude::sequential_iterator<Internal_Component> begin(container.begin());
 			cpprelude::sequential_iterator<Internal_Component> end(container.end());
 
-			return type_view<T>(begin, end);
+			return component_view<T>(begin, end);
 		}
 
 		void kill_entity(Entity e, bool cleanup_mode = false)
@@ -83,7 +101,7 @@ namespace ecs
 				{
 					auto& components = type.value();
 
-					for (Internal_Component& c : components)
+					for (Internal_Component& c: components)
 						c.destroy(c.data, _context);
 
 					components.clear();
@@ -99,7 +117,7 @@ namespace ecs
 
 		void clean_up()
 		{
-			for (auto entity : entity_bag)
+			for (auto entity: entity_bag)
 			{
 				kill_entity(entity, true);
 			}

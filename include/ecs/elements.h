@@ -32,6 +32,7 @@ internal_component_dispose(void*& d, cpprelude::memory_context* _context)
 {
 	if (d == nullptr) return;
 	T* data = (T*)d;
+	data->~T();
 	auto data_slice = cpprelude::make_slice(data);
 	_context->free(data_slice);
 	d = nullptr;

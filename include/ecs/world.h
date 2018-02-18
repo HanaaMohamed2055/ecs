@@ -74,6 +74,40 @@ namespace ecs
 			return type_view<T>(begin, end);
 		}
 
-		
+		void kill_entity(Entity e, bool cleanup_mode = false)
+		{
+			auto itr = ledger.lookup(e.id);
+			if (itr != ledger.end())
+			{
+				for (auto type = itr.value().begin(); type != itr.value().end(); ++type)
+				{
+					auto& components = type.value();
+
+					for (Internal_Component& c : components)
+						c.destroy(c.data, _context);
+
+					components.clear();
+				}
+			}
+
+			if (!cleanup_mode)
+			{
+				entity_bag.remove(e.id);
+				ledger.remove(e.id);
+			}
+		}
+
+		void clean_up()
+		{
+			for (auto entity : entity_bag)
+			{
+				kill_entity(entity, true);
+			}
+		}
+
+		~World()
+		{
+			clean_up();
+		}
 	};
 }

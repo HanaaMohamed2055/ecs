@@ -42,7 +42,6 @@ namespace ecs
 		T&
 		data()
 		{
-			assert(_current != _end);
 			return *(static_cast<T*>(_current->data));
 		}
 	};

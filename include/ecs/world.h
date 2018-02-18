@@ -9,9 +9,6 @@
 
 namespace ecs
 {
-	API_ECS bool dummy();
-	
-
 	struct World
 	{
 		using component_types_table = cpprelude::hash_array<cpprelude::string, cpprelude::dynamic_array<Internal_Component>>;
@@ -24,38 +21,11 @@ namespace ecs
 			:_context(context)
 		{}
 
-		Entity 
-		create_entity()
-		{
-			cpprelude::u64 id = entity_bag.insert(Entity());
-			entity_bag[id].id = id;
-			entity_bag[id].world = this;
-			return entity_bag[id];
-		}
+		API_ECS Entity
+		create_entity();
 
-		Entity clone_from_Entity(Entity e)
-		{
-			auto entity = create_entity();
-			
-			auto itr = ledger.lookup(e.id);
-			if(itr != ledger.end())
-			{
-				for (auto type_itr = itr.value().begin(); type_itr != itr.value().end(); ++type_itr)
-				{
-					auto& components = type_itr.value();
-
-					for (Internal_Component c: components)
-					{
-						ledger[entity.id][type_itr.key()].insert_back(Internal_Component());
-						auto& container = ledger[entity.id][type_itr.key()];
-						auto& component = container[container.count() - 1];
-						c.copy(c.data, component, _context);
-					}
-				}
-			}
-
-			return entity;
-		}
+		API_ECS Entity
+		clone_from_Entity(Entity e);
 
 		template<typename T>
 		T&
@@ -124,39 +94,12 @@ namespace ecs
 			return component_view<T>(begin, end);
 		}
 
-		void
-		kill_entity(Entity e, bool cleanup_mode = false)
-		{
-			auto itr = ledger.lookup(e.id);
-			if (itr != ledger.end())
-			{
-				for (auto type = itr.value().begin(); type != itr.value().end(); ++type)
-				{
-					auto& components = type.value();
+		API_ECS void
+		kill_entity(Entity e, bool cleanup_mode = false);
 
-					for (Internal_Component& c: components)
-						c.destroy(c.data, _context);
-
-					components.clear();
-				}
-			}
-
-			if (!cleanup_mode)
-			{
-				entity_bag.remove(e.id);
-				ledger.remove(e.id);
-			}
-		}
-
-		void
-		clean_up()
-		{
-			for (auto entity: entity_bag)
-			{
-				kill_entity(entity, true);
-			}
-		}
-
+		API_ECS void
+		clean_up();
+		
 		~World()
 		{
 			clean_up();

@@ -21,11 +21,18 @@ namespace ecs
 			:_context(context)
 		{}
 
+		/**
+		* creates an entity without any components/data bound to it
+		*/
 		API_ECS Entity
 		create_entity();
 
+		/**
+		* clones the data/components bound to an entity and binds them to a new entity
+		*/
 		API_ECS Entity
 		clone_from_Entity(Entity e);
+
 
 		template<typename T>
 		T&
@@ -45,6 +52,10 @@ namespace ecs
 			return *(static_cast<T*>(component.data));	
 		}
 		
+		/**
+		* asks whether the entity instance has the property specified
+		* Must be used before get or get_all
+		*/
 		template<typename T>
 		bool
 		has(Entity e)
@@ -69,10 +80,14 @@ namespace ecs
 				return true;
 			}
 
-			// the property 
+			// the property does not exist
 			return false;
 		}
 
+		/**
+		* gets the value of the first component it finds related to the
+		* specified property
+		*/
 		template<typename T>
 		T&
 		get(Entity e)
@@ -81,6 +96,10 @@ namespace ecs
 			return *(static_cast<T*>(ledger[e.id][type][0].data));
 		}
 				
+
+		/**
+		* gets a view of all the components related to the specified property
+		*/
 		template<typename T>
 		component_view<T>
 		get_all(Entity e)
@@ -94,9 +113,15 @@ namespace ecs
 			return component_view<T>(begin, end);
 		}
 
+		/**
+		* removes the entity with all of its components from the world
+		*/
 		API_ECS void
 		kill_entity(Entity e, bool cleanup_mode = false);
 
+		/**
+		* kills all entities in the world
+		*/
 		API_ECS void
 		clean_up();
 		

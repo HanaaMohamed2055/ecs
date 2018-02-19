@@ -4,7 +4,6 @@
 
 #include <ecs/elements.h>
 #include <ecs/bag.h>
-#include <ecs/utility.h>
 #include <ecs/api.h>
 
 namespace ecs
@@ -18,7 +17,9 @@ namespace ecs
 		cpprelude::memory_context* _context;
 
 		World(cpprelude::memory_context* context = cpprelude::platform->global_memory)
-			:_context(context)
+			:_context(context),
+			ledger(context),
+			entity_bag(context)
 		{}
 
 		/**
@@ -38,17 +39,16 @@ namespace ecs
 		T&
 		add_property(Entity e, T data)
 		{
+			Internal_Component component;
 			cpprelude::string key(typeid(T).name(), _context);
-			ledger[e.id][key].insert_back(Internal_Component());
-			auto& container = ledger[e.id][key];
-			auto& component = container[container.count() - 1];
-
 			component.type = key;
 			component.data = _context->alloc<T>();
 			new (component.data) T(data);
-			component.destroy = internal_component_dispose<T>;
-			component.copy = copy<T>;
+			component.destroy = utility::internal_component_dispose<T>;
+			component.copy = utility::copy<T>;
 
+			ledger[e.id][key].insert_back(component);
+			
 			return *(static_cast<T*>(component.data));	
 		}
 		
@@ -63,7 +63,7 @@ namespace ecs
 			return ((ledger.lookup(e.id) != ledger.end()) &&
 				(ledger[e.id].lookup(typeid(T).name()) != ledger[e.id].end()));
 		}
-
+				
 		template<typename T>
 		bool
 		remove_property(Entity e)
@@ -73,7 +73,7 @@ namespace ecs
 				cpprelude::string type(typeid(T).name(), _context);
 				
 				auto& components = ledger[e.id][type];
-				for (auto& c: components)
+				for (auto& c : components)
 					c.destroy(c.data, _context);
 
 				ledger[e.id].remove(type);

@@ -24,12 +24,13 @@ namespace ecs
 		cpprelude::dynamic_array<T> _data;
 		cpprelude::dynamic_array<bool> _valid;
 		cpprelude::stack_array<cpprelude::usize> _free_indices;
+		cpprelude::u64 _count = 0;
 
-		cpprelude::isize _last_valid = -1;
-		
+				
 		//more constructors could be added
 		bag(cpprelude::memory_context* context = cpprelude::platform->global_memory)
 			:_data(context),
+			_valid(context),
 			_free_indices(context)
 		{
 			reserve(RESERVED);
@@ -44,20 +45,18 @@ namespace ecs
 		cpprelude::usize
 		emplace(TArgs&& ... args)
 		{
-			cpprelude::usize place = _data.count();
-		
+			cpprelude::usize place = _count;
+			++_count;
+			
 			if (!_free_indices.empty())
 			{
 				place = _free_indices.top();
 				_free_indices.pop();
-				if (place > _last_valid)
-					_last_valid = place;
 				new (_data.data() + place) T(std::forward<TArgs>(args)...);
 				_valid[place] = true;
 				return place;
 			}
 
-			++_last_valid;
 			_valid.insert_back(true);
 			_data.emplace_back(std::forward<TArgs>(args)...);
 			return place;
@@ -66,20 +65,18 @@ namespace ecs
 		cpprelude::usize
 		insert(const T& value)
 		{
-			cpprelude::usize place = _data.count();
-		
+			cpprelude::usize place = _count;
+			++_count;
+
 			if (!_free_indices.empty())
 			{
 				place = _free_indices.top();
 				_free_indices.pop();
-				if (place > _last_valid) 
-					_last_valid = place;
 				new (_data.data() + place) T(value);
 				_valid[place] = true;
 				return place;
 			}
 
-			++_last_valid;
 			_valid.insert_back(true);
 			_data.emplace_back(value);
 			return place;
@@ -88,20 +85,18 @@ namespace ecs
 		cpprelude::usize
 		insert(T&& value)
 		{
-			cpprelude::usize place = _data.count();
+			cpprelude::usize place = _count;
+			++_count;
 
 			if (!_free_indices.empty())
 			{
 				place = _free_indices.top();
 				_free_indices.pop();
-				if (place > _last_valid)
-					_last_valid = place;
 				new (_data.data() + place) T(std::move(value));
 				_valid[place] = true;
 				return place;
 			}
 
-			++_last_valid;
 			_valid.insert_back(true);
 			_data.emplace_back(std::move(value));
 			return place;
@@ -110,11 +105,10 @@ namespace ecs
 		void
 		remove(cpprelude::usize index)
 		{
+			--_count;
 			_valid[index] = false;
 			_data[index].~T();
 			_free_indices.push(index);
-			if (_last_valid == index) 
-				--_last_valid;
 		}
 
 		T&
@@ -132,13 +126,13 @@ namespace ecs
 		cpprelude::usize
 		count() const
 		{
-			return _data.count() - _free_indices.count();
+			return _count;
 		}
 
 		bool
 		empty() const
 		{
-			return count() == 0;
+			return _count == 0;
 		}
 
 		cpprelude::usize
@@ -148,7 +142,7 @@ namespace ecs
 		}
 
 		bool
-		valid(cpprelude::usize index)
+		is_slot_occupied(cpprelude::usize index)
 		{
 			
 			return (index < _valid.count() && _valid[index]);
@@ -157,7 +151,7 @@ namespace ecs
 		void
 		reserve(cpprelude::usize expected_size)
 		{
-			cpprelude::usize available_size = _data.capacity() - _data.count() + _free_indices.count();
+			cpprelude::usize available_size = _data.capacity() - _count;
 			if (available_size >= expected_size)
 				return;
 			_data.reserve(expected_size);
@@ -176,24 +170,6 @@ namespace ecs
 		}
 
 		//iterator interface here
-		const_iterator
-		back() const
-		{
-			if (last_valid >= 0 && last_valid < _data.count())
-				return const_iterator(_data._data_block.ptr + last_valid, _valid._data_block.ptr + last_valid, 0);
-			else
-				return end();
-		}
-
-		iterator
-		back()
-		{
-			if (_last_valid >= 0 && _last_valid < _data.count())
-				return iterator(_data._data_block.ptr + _last_valid, _valid._data_block.ptr + _last_valid, 0);
-			else
-				return end();
-		}
-
 		const_iterator
 		begin() const 
 		{
@@ -319,6 +295,12 @@ namespace ecs
 
 		value_type&
 		value()
+		{
+			return *_element_it;
+		}
+
+		const value_type&
+		value() const
 		{
 			return *_element_it;
 		}

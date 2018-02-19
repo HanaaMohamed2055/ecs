@@ -25,10 +25,9 @@ namespace ecs
 
 				for (Internal_Component c : components)
 				{
-					ledger[entity.id][type_itr.key()].insert_back(Internal_Component());
-					auto& container = ledger[entity.id][type_itr.key()];
-					auto& component = container[container.count() - 1];
+					Internal_Component component;
 					c.copy(c.data, component, _context);
+					ledger[entity.id][type_itr.key()].insert_back(component);
 				}
 			}
 		}

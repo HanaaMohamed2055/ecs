@@ -1,18 +1,21 @@
 #pragma once
 #include <cpprelude/hash_array.h>
-#include <cpprelude/string.h>
 
 #include <ecs/elements.h>
-#include <ecs/bag.h>
+#include <ecs/utility.h>
+#include <ecs/helper_structures/bag.h>
 #include <ecs/api.h>
+
 
 namespace ecs
 {
 	struct World
 	{
-		using component_types_table = cpprelude::hash_array<cpprelude::string, cpprelude::dynamic_array<Internal_Component>>;
+		using component_types_table = cpprelude::hash_array<const char*, cpprelude::dynamic_array<cpprelude::usize>>;
 
 		bag<Entity> entity_bag;
+		bag<Component> component_bag;
+		
 		cpprelude::hash_array<cpprelude::u64, component_types_table> ledger;
 		cpprelude::memory_context* _context;
 
@@ -22,112 +25,95 @@ namespace ecs
 			entity_bag(context)
 		{}
 
-		/**
-		* creates an entity without any components/data bound to it
-		*/
+		
 		API_ECS Entity
 		create_entity();
 
-		/**
-		* clones the data/components bound to an entity and binds them to a new entity
-		*/
-		API_ECS Entity
-		clone_from_Entity(Entity e);
-
-
 		template<typename T>
 		T&
-		add_property(Entity e, T data)
+		add_property(cpprelude::u64 entity_id, T value)
 		{
-			Internal_Component component;
-			cpprelude::string key(typeid(T).name(), _context);
-			component.type = key;
+			ecs::Component component;
+			component.utils = utility::get_type_utils<T>();
 			component.data = _context->alloc<T>();
-			new (component.data) T(data);
-			component.destroy = utility::internal_component_dispose<T>;
-			component.copy = utility::copy<T>;
+			new (component.data) T(value);
 
-			ledger[e.id][key].insert_back(component);
+			cpprelude::usize index = component_bag.insert(component);
+			ledger[entity_id][component.utils->type].insert_back(index);
 			
 			return *(static_cast<T*>(component.data));	
 		}
+
+		template<typename T>
+		void
+		add_property(cpprelude::u64 entity_id, T* data)
+		{
+			ecs::Component component;
+			component.data = data;
+			component.utils = utility::get_type_utils<T>();
+			cpprelude::usize index = component_bag.insert(component);
+
+			ledger[entity_id][component.utils->type].insert_back(index);
+		}
+
 		
-		/**
-		* asks whether the entity instance has the property specified
-		* Must be used before get or get_all
-		*/
 		template<typename T>
 		bool
-		has(Entity e)
+		has(cpprelude::u64 entity_id)
 		{
-			return ((ledger.lookup(e.id) != ledger.end()) &&
-				(ledger[e.id].lookup(typeid(T).name()) != ledger[e.id].end()));
+			const char* type = utility::get_type_name<T>();
+			return ((ledger.lookup(entity_id) != ledger.end()) &&
+				(ledger[entity_id].lookup(type) != ledger[entity_id].end()));
 		}
 				
 		template<typename T>
 		bool
-		remove_property(Entity e)
+		remove_property(cpprelude::u64 entity_id)
 		{
-			if (has<T>(e))
+			if (has<T>(entity_id))
 			{
-				cpprelude::string type(typeid(T).name(), _context);
+				const char* type = utility::get_type_name<T>();
 				
-				auto& components = ledger[e.id][type];
+				auto& components = ledger[entity_id][type];
 				for (auto& c : components)
-					c.destroy(c.data, _context);
+					c.utils->free(c.data, _context);
 
-				ledger[e.id].remove(type);
+				ledger[entity_id].remove(type);
 				return true;
 			}
 
-			// the property does not exist
 			return false;
 		}
 
-		/**
-		* gets the value of the first component it finds related to the
-		* specified property
-		*/
 		template<typename T>
 		T&
-		get(Entity e)
+		get(cpprelude::u64 entity_id)
 		{	
-			cpprelude::string type(typeid(T).name(), _context);
-			return *(static_cast<T*>(ledger[e.id][type][0].data));
+			const char* type = utility::get_type_name<T>();
+			auto component = component_bag[ledger[entity_id][type][0]];
+			
+			return *(static_cast<T*>(component.data));
 		}
-				
-
-		/**
-		* gets a view of all the components related to the specified property
-		*/
+		
 		template<typename T>
-		component_view<T>
-		get_all(Entity e)
+		cpprelude::dynamic_array<Component>&
+		get_all(cpprelude::u64 entity_id)
 		{
-			cpprelude::string type(typeid(T).name(), _context);
-			auto& container = ledger[e.id][typeid(T).name()];
-
-			cpprelude::sequential_iterator<Internal_Component> begin(container.begin());
-			cpprelude::sequential_iterator<Internal_Component> end(container.end());
-
-			return component_view<T>(begin, end);
+			const char* type = utility::get_type_name<T>();
+			auto& container = ledger[entity_id][type];
+			
+			return container;
 		}
-
-		/**
-		* removes the entity with all of its components from the world
-		*/
+		
 		API_ECS void
-		kill_entity(Entity e, bool cleanup_mode = false);
+		kill_entity(cpprelude::u64 entity_id);
 
-		/**
-		* kills all entities in the world
-		*/
 		API_ECS void
 		clean_up();
-		
-		~World()
-		{
-			clean_up();
-		}
+		//
+		//~World()
+		//{
+		//	clean_up();
+		//}
 	};
 }

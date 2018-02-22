@@ -1,5 +1,5 @@
 #include <catch.hpp>
-#include <ecs/bag.h>
+#include <ecs/helper_structures/bag.h>
 #include <ecs/elements.h>
 
 using namespace cpprelude;

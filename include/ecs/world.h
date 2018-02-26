@@ -8,10 +8,22 @@
 
 
 namespace ecs
-{
+{	
+	namespace details
+	{
+		struct hash_char
+		{
+			inline cpprelude::usize
+				operator()(const char* ptr) const
+			{
+				return cpprelude::hash_bytes(ptr, 8);
+			}
+		};
+	}
+
 	struct World
 	{
-		using component_types_table = cpprelude::hash_array<const char*, cpprelude::dynamic_array<Component>>;
+		using component_types_table = cpprelude::hash_array<const char*, cpprelude::dynamic_array<Component>, details::hash_char>;
 
 		bag<Entity> entity_bag;
 				

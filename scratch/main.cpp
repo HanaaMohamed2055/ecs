@@ -16,9 +16,11 @@ int main()
 {
 	World w;
 	auto entity = w.create_entity();
-	//w.add_property<u32>(entity.id, (u32)2389);
-	hash<u64> x;
-	std::cout << x.operator() << std:: endl;
-	
+	w.add_property<u32>(entity.id, (u32)2389);
+	w.add_property<u32>(entity.id, (u32)8983);
+	w.add_property<r32>(entity.id, (u32)347);
 
+	auto components = w.get_all<u32>(0);
+	for (auto component : components)
+		std::cout << *(u32*)component.data << std::endl;
 }

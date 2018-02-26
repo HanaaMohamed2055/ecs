@@ -47,7 +47,7 @@ namespace utility
 	{
 		type_utils()
 		{
-			name = get_type_name<T>();
+			type = get_type_name<T>();
 			free = internal_destroy<T>;
 			copy = internal_clone<T>;
 		}

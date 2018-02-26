@@ -11,11 +11,10 @@ namespace ecs
 {
 	struct World
 	{
-		using component_types_table = cpprelude::hash_array<const char*, cpprelude::dynamic_array<cpprelude::usize>>;
+		using component_types_table = cpprelude::hash_array<const char*, cpprelude::dynamic_array<Component>>;
 
 		bag<Entity> entity_bag;
-		bag<Component> component_bag;
-		
+				
 		cpprelude::hash_array<cpprelude::u64, component_types_table> ledger;
 		cpprelude::memory_context* _context;
 
@@ -38,8 +37,7 @@ namespace ecs
 			component.data = _context->alloc<T>();
 			new (component.data) T(value);
 
-			cpprelude::usize index = component_bag.insert(component);
-			ledger[entity_id][component.utils->type].insert_back(index);
+			ledger[entity_id][component.utils->type].insert_back(component);
 			
 			return *(static_cast<T*>(component.data));	
 		}
@@ -51,9 +49,8 @@ namespace ecs
 			ecs::Component component;
 			component.data = data;
 			component.utils = utility::get_type_utils<T>();
-			cpprelude::usize index = component_bag.insert(component);
-
-			ledger[entity_id][component.utils->type].insert_back(index);
+		
+			ledger[entity_id][component.utils->type].insert_back(component);
 		}
 
 		
@@ -90,7 +87,7 @@ namespace ecs
 		get(cpprelude::u64 entity_id)
 		{	
 			const char* type = utility::get_type_name<T>();
-			auto component = component_bag[ledger[entity_id][type][0]];
+			auto component = ledger[entity_id][type][0];
 			
 			return *(static_cast<T*>(component.data));
 		}

@@ -74,6 +74,17 @@ namespace ecs
 			return _sparse[_dense[index]];
 		}
 
+		T&
+		get(cpprelude::usize index)
+		{
+			return _sparse[_dense[index]];
+		}
+
+		const T&
+		get(cpprelude::usize index)
+		{
+			return _sparse[_dense[index]];
+		}
 		
 		cpprelude::usize
 		count() const

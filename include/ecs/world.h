@@ -1,29 +1,18 @@
 #pragma once
+
 #include <cpprelude/hash_array.h>
 
-
-#include <ecs/helper_structures/bag.h>
 #include <ecs/helper_structures/view.h>
 #include <ecs/api.h>
+#include <ecs/utility.h>
 
 
 namespace ecs
 {	
-	namespace details
-	{
-		struct hash_char
-		{
-			inline cpprelude::usize
-				operator()(const char* ptr) const
-			{
-				return cpprelude::hash_bytes(ptr, 8);
-			}
-		};
-	}
 
 	struct World
 	{
-		using component_types_table = cpprelude::hash_array<const char*, cpprelude::dynamic_array<cpprelude::usize>, details::hash_char>;
+		using component_types_table = cpprelude::hash_array<const char*, cpprelude::dynamic_array<cpprelude::usize>, utility::details::hash_char>;
 
 		sparse_unordered_set<Entity> entity_set;
 		sparse_unordered_set<Component> component_set;
@@ -141,40 +130,40 @@ namespace ecs
 		
 		template<typename T>
 		components_view<T>
-		get_all(cpprelude::u64 entity_id)
+		get_entity_properties(cpprelude::u64 entity_id)
 		{
+			const char* type = utility::get_type_name<T>();
 			auto& components = ledger[entity_id];
-			return components_view<T>(&components, &component_set);
+			return components_view<T>(&components, &component_set, type);
 		}
 
-		generic_components_view
-		get_all_properties(cpprelude::u64 entity_id)
+		template<typename T>
+		components_view<T>
+		get_world_components()
 		{
-			auto& components = ledger[entity_id];
-			return generic_components_view(&components, &component_set);
+			const char* type = utility::get_type_name<T>();
+			auto& components = type_table[type];
+			return components_view<T>(&components, &component_set, type);
 		}
 
-		sparse_unordered_set<Component>&
-		get_all_world_components()
-		{
-			return component_set;
-		}
+		API_ECS generic_components_view
+		get_all_entity_properties(cpprelude::u64 entity_id);
 		
-		sparse_unordered_set<Entity>&
-		get_all_world_entities()
-		{
-			return entity_set;
-		}
+		API_ECS sparse_unordered_set<Component>&
+		get_all_world_components();
 				
+		API_ECS sparse_unordered_set<Entity>&
+		get_all_world_entities();
+						
 		API_ECS void
 		kill_entity(cpprelude::u64 entity_id);
 
-		/*API_ECS void
-		clean_up();*/
-		//
-		//~World()
-		//{
-		//	clean_up();
-		//}
+		API_ECS void
+		clean_up();
+	
+		~World()
+		{
+			clean_up();
+		}
 	};
 }

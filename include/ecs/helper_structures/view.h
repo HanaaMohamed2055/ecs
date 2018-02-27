@@ -3,7 +3,6 @@
 #include <cpprelude/dynamic_array.h>
 
 #include <ecs/helper_structures/sparse_unordered_set.h>
-#include <ecs/utility.h>
 #include <ecs/elements.h>
 
 namespace ecs
@@ -81,13 +80,13 @@ namespace ecs
 		iterator current;
 		cpprelude::dynamic_array<cpprelude::usize>* _indices;
 		sparse_unordered_set<Component>* _components;
-		const char* type = utility::get_type_name<T>();
+		const char* _type;
 
-		components_view(cpprelude::dynamic_array<cpprelude::usize>* indices, sparse_unordered_set<Component>* components)
-			:_indices(indices), _components(components)
+		components_view(cpprelude::dynamic_array<cpprelude::usize>* indices, sparse_unordered_set<Component>* components, const char* type)
+			:_indices(indices), _components(components), _type(type)
 		{
 			current = indices->begin();
-			while (current != _indices->end() &&  _components->at(*current).utils->type != type)
+			while (current != _indices->end() &&  _components->at(*current).utils->type != _type)
 				++current;
 		}
 
@@ -109,7 +108,7 @@ namespace ecs
 		increment()
 		{
 			++current;
-			if (current != _indices->end() && _components->at(*current).utils->type != type)
+			if (current != _indices->end() && _components->at(*current).utils->type != _type)
 				++current;
 		}
 
@@ -117,7 +116,7 @@ namespace ecs
 		operator++()
 		{
 			++current;
-			if (current != _indices->end() && _components->at(*current).utils->type != type)
+			if (current != _indices->end() && _components->at(*current).utils->type != _type)
 				++current;
 
 		}

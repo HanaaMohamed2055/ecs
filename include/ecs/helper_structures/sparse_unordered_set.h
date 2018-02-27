@@ -69,7 +69,7 @@ namespace ecs
 		}
 		
 		void 
-		remove_by_index(cpprelude::usize index)
+		remove_at(cpprelude::usize index)
 		{
 			if (index >= _dense.count())
 				return;

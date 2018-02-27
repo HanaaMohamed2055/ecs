@@ -2,8 +2,6 @@
 
 #include <cpprelude/defines.h>
 #include <cpprelude/memory_context.h>
-#include <cpprelude/platform.h>
-#include <cpprelude/dynamic_array.h>
 
 namespace utility
 {
@@ -22,6 +20,15 @@ namespace utility
 				memcpy(type_name, __FUNCTION__ + FRONT_SIZE, size - 1u);
 
 				return type_name;
+			}
+		};
+
+		struct hash_char
+		{
+			inline cpprelude::usize
+				operator()(const char* ptr) const
+			{
+				return cpprelude::hash_bytes(ptr, 8);
 			}
 		};
 	}
@@ -95,6 +102,7 @@ namespace utility
 		T copy;
 
 		//TODO: here I should copy the entity deeply (with all its properties)
+
 
 		return copy;
 	}

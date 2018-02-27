@@ -13,12 +13,32 @@ namespace ecs
 		return entity_set[index];
 	}
 	
+	generic_components_view
+	World::get_all_entity_properties(cpprelude::u64 entity_id)
+	{
+		auto& components = ledger[entity_id];
+		return generic_components_view(&components, &component_set);
+	}
+
+	sparse_unordered_set<Component>&
+	World::get_all_world_components()
+	{
+		return component_set;
+	}
+
+	sparse_unordered_set<Entity>&
+	World::get_all_world_entities()
+	{
+		return entity_set;
+	}
+
 	void
 	World::kill_entity(cpprelude::u64 id)
 	{
-		//remove the entity
+		// remove the entity
 		entity_set.remove(id);
-		
+
+		// remove the entity components
 		auto entity_components = ledger[id];
 		for (auto index : entity_components)
 		{
@@ -30,19 +50,15 @@ namespace ecs
 			typed_components.remove_back();
 		
 			component.utils->free(component.data, _context);
-			component_set.remove_by_index(index);
+			component_set.remove_at(index);
 		}
 
 		ledger.remove(id);
 	}
 
-	//	entity_bag.remove(id);
-	//	ledger.remove(id);
-	//}
-
-	//void
-	//World::clean_up()
-	//{
-	//	 
-	//}
+	void
+	World::clean_up()
+	{
+		
+	}
 }

@@ -19,12 +19,21 @@ int main()
 	w.add_property<u32>(entity.id, (u32)8983);
 	w.add_property<r32>(entity.id, (r32)347);
 
-	auto components = w.get_all_properties(0);
+	auto components = w.get_entity_properties<u32>(0);
 	while (!components.reached_end())
 	{
-		std::cout << (*components).utils->type << std::endl;
+		u32& data = components.get();
+		++data;
 		++components;
 	}
+
+	components.reset();
+	while (!components.reached_end())
+	{
+		std::cout << *components << std::endl;
+		++components;
+	}
+
 
 		
 }

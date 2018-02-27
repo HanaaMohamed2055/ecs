@@ -13,22 +13,28 @@ namespace ecs
 		return entity_set[index];
 	}
 	
-	//void
-	//World::kill_entity(cpprelude::u64 id)
-	//{
-	//	auto itr = ledger.lookup(id);
-	//	if (itr != ledger.end())
-	//	{
-	//		for (auto type = itr.value().begin(); type != itr.value().end(); ++type)
-	//		{
-	//			auto& components = type.value();
+	void
+	World::kill_entity(cpprelude::u64 id)
+	{
+		//remove the entity
+		entity_set.remove(id);
+		
+		auto entity_components = ledger[id];
+		for (auto index : entity_components)
+		{
+			auto& component = component_set[index];
+			
+			auto& typed_components = type_table[component.utils->type];
+			auto itr = std::find(typed_components.begin(), typed_components.end(), index);
+			std::swap(typed_components[typed_components.count() - 1], *itr);
+			typed_components.remove_back();
+		
+			component.utils->free(component.data, _context);
+			component_set.remove_by_index(index);
+		}
 
-	//			/*for (Component& c : components)
-	//				c.utils->free(c.data, _context);*/
-
-	//			components.clear();
-	//		}
-	//	}
+		ledger.remove(id);
+	}
 
 	//	entity_bag.remove(id);
 	//	ledger.remove(id);

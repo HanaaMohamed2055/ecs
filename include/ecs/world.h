@@ -93,22 +93,35 @@ namespace ecs
 		}
 				
 		template<typename T>
-		bool
+		void
 		remove_property(cpprelude::u64 entity_id)
 		{
-			if (has<T>(entity_id))
-			{
-				const char* type = utility::get_type_name<T>();
+			const char* type = utility::get_type_name<T>();
 				
-				auto& entity_components = ledger[entity_id];
-				auto& typed_components = type_table[type];
+			auto& entity_components = ledger[entity_id];
+			auto& typed_components = type_table[type];
+			cpprelude::usize last_index = entity_components.count() - 1;
+			
+			for (cpprelude::usize i = 0; i <= last_index; ++i)
+			{
+				auto index = entity_components[i];
+				auto& component = component_set[index];
+					
+				if (component.utils->type != type)
+					continue;
 
-				//TODO: find the intersection of the two arrays and remove it
-		
-				return true;
+				auto& typed_components = type_table[component.utils->type];
+				auto itr = std::find(typed_components.begin(), typed_components.end(), index);
+				std::swap(typed_components[typed_components.count() - 1], *itr);
+				typed_components.remove_back();
+
+				component.utils->free(component.data, _context);
+				component_set.remove_by_index(index);
+
+				std::swap(entity_components[i], entity_components[last_index--]);
 			}
 
-			return false;
+			entity_components.remove_back(entity_components.count() - last_index - 1);
 		}
 
 		template<typename T>
@@ -153,10 +166,10 @@ namespace ecs
 			return entity_set;
 		}
 				
-		/*API_ECS void
+		API_ECS void
 		kill_entity(cpprelude::u64 entity_id);
 
-		API_ECS void
+		/*API_ECS void
 		clean_up();*/
 		//
 		//~World()

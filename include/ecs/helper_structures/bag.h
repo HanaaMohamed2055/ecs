@@ -234,14 +234,16 @@ namespace ecs
 		cpprelude::sequential_iterator<value_type> _element_it;
 		cpprelude::sequential_iterator<bool> _flag_it;
 		cpprelude::usize _size = 0;
-
+		
 
 		bag_iterator(value_type* _element, bool* flag, cpprelude::usize size)
 			:_element_it(_element), _flag_it(flag), _size(size)
 		{}
 
 		bag_iterator(const bag_iterator<T>& other)
-			:_element_it(other._element_it._element), _flag_it(other._flag_it._element), _size(other._size)
+			:_element_it(other._element_it._element),
+			_flag_it(other._flag_it._element),
+			_size(other._size)
 		{}
 		
 		bag_iterator&
@@ -279,6 +281,8 @@ namespace ecs
 
 			return result;
 		}
+
+
 
 		bool
 		operator==(const bag_iterator& other) const

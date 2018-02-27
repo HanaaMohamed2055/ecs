@@ -17,7 +17,9 @@ namespace ecs
 	World::get_all_entity_properties(cpprelude::u64 entity_id)
 	{
 		auto& components = ledger[entity_id];
-		return generic_components_view(&components, &component_set);
+		generic_component_iterator begin(component_set.begin(), components.begin());
+		generic_component_iterator end(component_set.end(), components.end());
+		return generic_components_view(begin, end);
 	}
 
 	sparse_unordered_set<Component>&

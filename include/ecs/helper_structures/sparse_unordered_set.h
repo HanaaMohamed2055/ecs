@@ -131,40 +131,37 @@ namespace ecs
 		const_iterator
 		begin() const
 		{
-			return const_iterator(_sparse._data._data_block.ptr, _dense._data_block.ptr);
+			return const_iterator(_sparse.begin(), _dense.begin());
 		}
 
 		iterator
 		begin()
 		{
-			return iterator(_sparse._data._data_block.ptr, _dense._data_block.ptr);
+			return iterator(_sparse.begin(), _dense.begin());
 		}
 
 		const_iterator
 		cbegin() const
 		{
-			return const_iterator(_sparse._data._data_block.ptr, _dense._data_block.ptr);
+			return const_iterator(_sparse.cbegin(), _dense.cbegin());
 		}
 
 		const_iterator
 		end() const
 		{
-			return const_iterator(_sparse._data._data_block.ptr,
-				_dense._data_block.ptr + _dense.count());
+			return const_iterator(_sparse.begin(), _dense.end());
 		}
 
 		iterator
 		end()
 		{
-			return iterator(_sparse._data._data_block.ptr,
-				_dense._data_block.ptr + _dense.count());
+			return iterator(_sparse.begin(), _dense.end());
 		}
 
 		const_iterator
 		cend()
 		{
-			return const_iterator(_sparse._data._data_block.ptr,
-				_dense._data_block.ptr + _dense.count());
+			return const_iterator(_sparse.begin(), _dense.end());
 		}
 
 		~sparse_unordered_set()
@@ -183,11 +180,19 @@ namespace ecs
 		using reference = T&;
 		using data_type = T;
 
-		T* _value_it;
-		cpprelude::usize* _index_it;
+		T* _values;
+		cpprelude::sequential_iterator<cpprelude::usize> _index_it;
 			
-		sparse_set_iterator(value_type* value_it, cpprelude::usize* index_it)
-			:_value_it(value_it), _index_it(index_it)
+		sparse_set_iterator(const bag_iterator<T>& value_it, const cpprelude::sequential_iterator<cpprelude::usize>& index_it)
+			:_values(value_it._element_it._element), _index_it(index_it._element)
+		{}
+
+		sparse_set_iterator(const sparse_set_iterator& other)
+			:_values(other._value_it), _index_it(other._index_it)
+		{}
+
+		sparse_set_iterator(T* value_it, cpprelude::usize index_it)
+			:_values(value_it), _index_it(index_it)
 		{}
 
 		sparse_set_iterator&
@@ -202,6 +207,7 @@ namespace ecs
 		{
 			auto result = *this;
 			++_index_it;
+
 			return result;
 		}
 
@@ -209,7 +215,7 @@ namespace ecs
 		operator==(const sparse_set_iterator& other) const
 		{
 			return _index_it == other._index_it 
-				&& _value_it == other._value_it;
+				&& _values == other._values;
 		}
 
 		bool
@@ -221,19 +227,25 @@ namespace ecs
 		value_type&
 		value()
 		{
-			return _value_it[*_index_it];
+			return _values[*_index_it];
 		}
 
 		const value_type&
 		value() const
 		{
-			return _value_it[*_index_it];
+			return _values[*_index_it];
 		}
 				
 		value_type&
 		operator*()
 		{
-			return _value_it[*_index_it];
+			return _values[*_index_it];
+		}
+
+		const value_type&
+		operator*() const
+		{
+			return _values[*_index_it];
 		}
 	};
 }

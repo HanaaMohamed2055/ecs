@@ -17,7 +17,9 @@ int main()
 	auto entity = w.create_entity();
 	w.add_property<u32>(entity.id, (u32)2389);
 	w.add_property<u32>(entity.id, (u32)8983);
-	w.add_property<r32>(entity.id, (r32)347);
+	w.add_property<r32>(entity.id, (r32)34.7);
+	w.add_property<r32>(entity.id, (r32)34.740);
+	w.add_property<u32>(entity.id, (u32)347930);
 
 	auto components = w.get_entity_properties<u32>(0);
 	while (!components.reached_end())
@@ -34,6 +36,8 @@ int main()
 		++components;
 	}
 
-
+	auto all_components = w.get_all_entity_properties(0);
+	for (auto component : all_components)
+		std::cout << component.utils->type << std::endl;
 		
 }

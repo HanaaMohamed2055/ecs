@@ -92,13 +92,13 @@ namespace ecs
 		}
 
 		T&
-		get(cpprelude::usize index)
+		at(cpprelude::usize index)
 		{
 			return _sparse[_dense[index]];
 		}
 
 		const T&
-		at(cpprelude::usize index)
+		at(cpprelude::usize index) const
 		{
 			return _sparse[_dense[index]];
 		}

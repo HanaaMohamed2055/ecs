@@ -93,17 +93,4 @@ namespace utility
 		}
 	}
 
-	template<typename T>
-	T
-	copy_entity(T entity)
-	{
-		if (entity.world == nullptr)
-			return;
-		T copy;
-
-		//TODO: here I should copy the entity deeply (with all its properties)
-
-
-		return copy;
-	}
 }

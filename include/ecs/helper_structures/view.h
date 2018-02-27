@@ -24,13 +24,13 @@ namespace ecs
 		Component&
 		get_component()
 		{
-			return _components->get(*current);
+			return _components->at(*current);
 		}
 		
 		Component&
 		operator*()
 		{
-			return _components->get(*current);
+			return _components->at(*current);
 		}
 				
 		void
@@ -93,14 +93,14 @@ namespace ecs
 		T&
 		get()
 		{
-			auto component = _components->get(*current);
+			auto component = _components->at(*current);
 			return *(static_cast<T*>(component.data));
 		}
 
 		T&
 		operator*()
 		{
-			auto component = _components->get(*current);
+			auto component = _components->at(*current);
 			return *(static_cast<T*>(component.data));
 		}
 
@@ -144,5 +144,24 @@ namespace ecs
 		{
 			return current == _indices->end();
 		}
+	};
+	
+	struct generic_component_iterator
+	{
+		using iterator_category = std::forward_iterator_tag;
+		using value_type = Component;
+		using difference_type = cpprelude::isize;
+		using pointer = Component*;
+		using reference = Component&;
+		using data_type = Component;
+
+		cpprelude::sequential_iterator<cpprelude::usize> _index_it;
+		
+	};
+
+	template<typename T>
+	struct component_iterator
+	{
+
 	};
 }

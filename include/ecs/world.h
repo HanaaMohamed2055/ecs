@@ -1,10 +1,9 @@
 #pragma once
 #include <cpprelude/hash_array.h>
 
-#include <ecs/elements.h>
-#include <ecs/utility.h>
+
 #include <ecs/helper_structures/bag.h>
-#include <ecs/helper_structures/sparse_unordered_set.h>
+#include <ecs/helper_structures/view.h>
 #include <ecs/api.h>
 
 
@@ -26,17 +25,19 @@ namespace ecs
 	{
 		using component_types_table = cpprelude::hash_array<const char*, cpprelude::dynamic_array<cpprelude::usize>, details::hash_char>;
 
-		bag<Entity> entity_bag;
-		sparse_unordered_set<Component> components;
+		sparse_unordered_set<Entity> entity_set;
+		sparse_unordered_set<Component> component_set;
 				
+		component_types_table type_table;
 		cpprelude::hash_array<cpprelude::u64, cpprelude::dynamic_array<cpprelude::usize>> ledger;
 		cpprelude::memory_context* _context;
 
 		World(cpprelude::memory_context* context = cpprelude::platform->global_memory)
 			:_context(context),
 			ledger(context),
-			entity_bag(context),
-			components(context)
+			entity_set(context),
+			component_set(context),
+			type_table(context)
 		{}
 
 		
@@ -52,9 +53,11 @@ namespace ecs
 			component.data = _context->alloc<T>();
 			new (component.data) T(value);
 
-			components.insert(component);
-			ledger[entity_id][component.utils->type].insert_back(components.count() - 1);
-			
+			component_set.insert(component);
+			cpprelude::usize component_index = component_set.count() - 1;
+			ledger[entity_id].insert_back(component_index);
+			type_table[component.utils->type].insert_back(component_index);
+
 			return *(static_cast<T*>(component.data));	
 		}
 
@@ -66,8 +69,10 @@ namespace ecs
 			component.data = data;
 			component.utils = utility::get_type_utils<T>();
 
-			components.insert(component);
-			ledger[entity_id][component.utils->type].insert_back(components.count() - 1);
+			component_set.insert(component);
+			cpprelude::usize component_index = components.count() - 1;
+			ledger[entity_id].insert_back(component_index);
+			type_table[component.utils->type].insert_back(component_index);
 		}
 
 		
@@ -76,8 +81,15 @@ namespace ecs
 		has(cpprelude::u64 entity_id)
 		{
 			const char* type = utility::get_type_name<T>();
-			return ((ledger.lookup(entity_id) != ledger.end()) &&
-				(ledger[entity_id].lookup(type) != ledger[entity_id].end()));
+			auto& components = ledger[entity_id];
+			
+			for (auto index : components)
+			{
+				if (component_set[index].utils->type == type)
+					return true;
+			}
+
+			return false;
 		}
 				
 		template<typename T>
@@ -88,11 +100,11 @@ namespace ecs
 			{
 				const char* type = utility::get_type_name<T>();
 				
-				auto& components = ledger[entity_id][type];
-				for (auto index : components)
-					components[index].utils->free(c.data, _context);
+				auto& entity_components = ledger[entity_id];
+				auto& typed_components = type_table[type];
 
-				ledger[entity_id].remove(type);
+				//TODO: find the intersection of the two arrays and remove it
+		
 				return true;
 			}
 
@@ -100,30 +112,52 @@ namespace ecs
 		}
 
 		template<typename T>
-		T&
+		T& 
 		get(cpprelude::u64 entity_id)
 		{	
 			const char* type = utility::get_type_name<T>();
-			auto component = components[ledger[entity_id][type][0]];
+			auto components = ledger[entity_id];
 			
-			return *(static_cast<T*>(component.data));
+			for (auto index : components)
+			{
+				auto component = component_set[index];
+				if (component.utils->type == type)
+					return *(static_cast<T*>(component.data));
+			}
 		}
 		
 		template<typename T>
-		cpprelude::dynamic_array<Component>&
+		components_view<T>
 		get_all(cpprelude::u64 entity_id)
 		{
-			const char* type = utility::get_type_name<T>();
-			auto& container = ledger[entity_id][type];
-			
-			return container;
+			auto& components = ledger[entity_id];
+			return components_view<T>(&components, &component_set);
+		}
+
+		generic_components_view
+		get_all_properties(cpprelude::u64 entity_id)
+		{
+			auto& components = ledger[entity_id];
+			return generic_components_view(&components, &component_set);
+		}
+
+		sparse_unordered_set<Component>&
+		get_all_world_components()
+		{
+			return component_set;
 		}
 		
-		API_ECS void
+		sparse_unordered_set<Entity>&
+		get_all_world_entities()
+		{
+			return entity_set;
+		}
+				
+		/*API_ECS void
 		kill_entity(cpprelude::u64 entity_id);
 
 		API_ECS void
-		clean_up();
+		clean_up();*/
 		//
 		//~World()
 		//{

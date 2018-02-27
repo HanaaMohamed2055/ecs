@@ -27,25 +27,31 @@ namespace ecs
 
 						
 		template<typename ... TArgs>
-		void
+		cpprelude::usize
 		emplace(TArgs&& ... args)
 		{
-			cpprelude::usize index = _sparse.emplace(std::forward<TArgs>(args)...);
-			_dense.insert_back(index);
+			cpprelude::usize actual_index = _sparse.emplace(std::forward<TArgs>(args)...);
+			_dense.insert_back(actual_index);
+			
+			return actual_index;
 		}
 
-		void
+		cpprelude::usize
 		insert(T&& value)
 		{
-			cpprelude::usize index = _sparse.insert(std::move(value));
-			_dense.insert_back(index);
+			cpprelude::usize actual_index = _sparse.insert(std::move(value));
+			_dense.insert_back(actual_index);
+		
+			return actual_index;
 		}
 
-		void
+		cpprelude::usize
 		insert(const T& value)
 		{
-			cpprelude::usize index = _sparse.insert(value);
-			_dense.insert_back(index);
+			cpprelude::usize actual_index = _sparse.insert(value);
+			_dense.insert_back(actual_index);
+		
+			return actual_index;
 		}
 
 		bool
@@ -62,6 +68,17 @@ namespace ecs
 			return false;
 		}
 		
+		void 
+		remove_by_index(cpprelude::usize index)
+		{
+			if (index >= _dense.count())
+				return;
+			cpprelude::usize actual_index = _dense[index];
+			_sparse.remove(actual_index);
+			std::swap(_dense[_dense.count() - 1], _dense[index]);
+			_dense.remove_back();
+		}
+
 		T&
 		operator[](cpprelude::usize index)
 		{
@@ -81,7 +98,7 @@ namespace ecs
 		}
 
 		const T&
-		get(cpprelude::usize index)
+		at(cpprelude::usize index)
 		{
 			return _sparse[_dense[index]];
 		}

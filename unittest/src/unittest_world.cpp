@@ -1,8 +1,7 @@
 #include <catch.hpp>
 #include <ecs/world.h>
 
-using namespace cpprelude;
-using namespace ecs;
+
 
 TEST_CASE("world make test", "[world-make]")
 {

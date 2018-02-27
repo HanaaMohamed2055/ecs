@@ -1,11 +1,10 @@
 #include <cpprelude/defines.h>
-#include <cpprelude/memory_context.h>
 #include <cpprelude/string.h>
-#include <cpprelude/hash_array.h>
+
 
 #include <ecs/world.h>
-#include <ecs/elements.h>
-#include <ecs/utility.h>
+#include <ecs/helper_structures/view.h>
+
 
 using namespace ecs;
 using namespace cpprelude;
@@ -18,9 +17,14 @@ int main()
 	auto entity = w.create_entity();
 	w.add_property<u32>(entity.id, (u32)2389);
 	w.add_property<u32>(entity.id, (u32)8983);
-	w.add_property<r32>(entity.id, (u32)347);
+	w.add_property<r32>(entity.id, (r32)347);
 
-	auto components = w.get_all<u32>(0);
-	for (auto component : components)
-		std::cout << *(u32*)component.data << std::endl;
+	auto components = w.get_all_properties(0);
+	while (!components.reached_end())
+	{
+		std::cout << (*components).utils->type << std::endl;
+		++components;
+	}
+
+		
 }

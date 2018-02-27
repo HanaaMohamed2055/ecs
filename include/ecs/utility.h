@@ -43,7 +43,7 @@ namespace utility
 	};
 
 	template<typename T>
-	struct type_utils: base_type_utils
+	struct type_utils : base_type_utils
 	{
 		type_utils()
 		{

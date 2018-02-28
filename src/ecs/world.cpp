@@ -51,7 +51,9 @@ namespace ecs
 			std::swap(typed_components[typed_components.count() - 1], *itr);
 			typed_components.remove_back();
 		
-			component.utils->free(component.data, _context);
+			if(component.dynamically_allocated)
+				component.utils->free(component.data, _context);
+		
 			component_set.remove_at(index);
 		}
 
@@ -61,6 +63,11 @@ namespace ecs
 	void
 	World::clean_up()
 	{
-		
+		// deallocate only the memory allocated by the ecs 
+		for (auto& component : component_set)
+		{
+			if (component.dynamically_allocated)
+				component.utils->free(component.data, _context);
+		}
 	}
 }

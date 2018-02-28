@@ -17,24 +17,18 @@ int main()
 	auto entity = w.create_entity();
 	w.add_property<u32>(entity.id, (u32)2389);
 	w.add_property<u32>(entity.id, (u32)8983);
-	w.add_property<r32>(entity.id, (r32)34.7);
+	r32 data = 34.7;
+	w.add_property<r32>(entity.id, &data);
 	w.add_property<r32>(entity.id, (r32)34.740);
 	w.add_property<u32>(entity.id, (u32)347930);
 
 	auto components = w.get_entity_properties<u32>(0);
-	while (!components.reached_end())
-	{
-		u32& data = components.get();
-		++data;
-		++components;
-	}
+	for (auto& component : components)
+			++component;
 
-	components.reset();
-	while (!components.reached_end())
-	{
-		std::cout << *components << std::endl;
-		++components;
-	}
+	auto components2 = w.get_world_components<u32>();
+	for (auto component : components2)
+		std::cout << component << std::endl;
 
 	auto all_components = w.get_all_entity_properties(0);
 	for (auto component : all_components)

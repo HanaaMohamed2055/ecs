@@ -28,8 +28,7 @@ namespace ecs
 			component_set(context),
 			type_table(context)
 		{}
-
-		
+				
 		API_ECS Entity
 		create_entity();
 
@@ -41,7 +40,8 @@ namespace ecs
 			component.utils = utility::get_type_utils<T>();
 			component.data = _context->alloc<T>();
 			new (component.data) T(value);
-
+			component.dynamically_allocated = true;
+		
 			component_set.insert(component);
 			cpprelude::usize component_index = component_set.count() - 1;
 			ledger[entity_id].insert_back(component_index);
@@ -59,12 +59,11 @@ namespace ecs
 			component.utils = utility::get_type_utils<T>();
 
 			component_set.insert(component);
-			cpprelude::usize component_index = components.count() - 1;
+			cpprelude::usize component_index = component_set.count() - 1;
 			ledger[entity_id].insert_back(component_index);
 			type_table[component.utils->type].insert_back(component_index);
 		}
-
-		
+				
 		template<typename T>
 		bool
 		has(cpprelude::u64 entity_id)
@@ -104,7 +103,9 @@ namespace ecs
 				std::swap(typed_components[typed_components.count() - 1], *itr);
 				typed_components.remove_back();
 
-				component.utils->free(component.data, _context);
+				if(component.dynamically_allocated)
+					component.utils->free(component.data, _context);
+				
 				component_set.remove_by_index(index);
 
 				std::swap(entity_components[i], entity_components[last_index--]);
@@ -134,7 +135,11 @@ namespace ecs
 		{
 			const char* type = utility::get_type_name<T>();
 			auto& components = ledger[entity_id];
-			return components_view<T>(&components, &component_set, type);
+			
+			component_iterator<T> begin(component_set.begin(), components.begin(), type, component_set.count());
+			component_iterator<T> end(component_set.end(), components.end(), type, 0);
+			
+			return components_view<T>(begin, end);
 		}
 
 		template<typename T>
@@ -143,7 +148,11 @@ namespace ecs
 		{
 			const char* type = utility::get_type_name<T>();
 			auto& components = type_table[type];
-			return components_view<T>(&components, &component_set, type);
+
+			component_iterator<T> begin(component_set.begin(), components.begin(), type, components.count());
+			component_iterator<T> end(component_set.end(), components.end(), type, 0);
+
+			return components_view<T>(begin, end);
 		}
 
 		API_ECS generic_components_view
@@ -160,7 +169,7 @@ namespace ecs
 
 		API_ECS void
 		clean_up();
-	
+		
 		~World()
 		{
 			clean_up();

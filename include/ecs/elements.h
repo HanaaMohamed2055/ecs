@@ -24,5 +24,6 @@ namespace ecs
 	{
 		void* data = nullptr;
 		utility::base_type_utils* utils = nullptr;
+		bool dynamically_allocated = false;
 	};
 }

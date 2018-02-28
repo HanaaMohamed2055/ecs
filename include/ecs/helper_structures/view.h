@@ -81,30 +81,6 @@ namespace ecs
 		}
 	};
 	
-	struct generic_components_view
-	{
-		using iterator = generic_component_iterator;
-
-		iterator _begin_it;
-		iterator _end_it;
-
-		generic_components_view(const iterator& begin_it, const iterator& end_it)
-			:_begin_it(begin_it), _end_it(end_it)
-		{}
-
-		iterator
-			begin()
-		{
-			return _begin_it;
-		}
-
-		iterator
-			end()
-		{
-			return _end_it;
-		}
-	};
-
 	template<typename T>
 	struct component_iterator
 	{
@@ -217,11 +193,9 @@ namespace ecs
 		}
 	};
 
-	template<typename T>
+	template<typename iterator>
 	struct components_view
 	{
-		using iterator = component_iterator<T>;
-		using const_iterator = component_iterator<const T>;
 		iterator _begin_it;
 		iterator _end_it;
 

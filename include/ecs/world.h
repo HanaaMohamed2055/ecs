@@ -130,20 +130,20 @@ namespace ecs
 		}
 		
 		template<typename T>
-		components_view<T>
+		components_view<component_iterator<T>>
 		get_entity_properties(cpprelude::u64 entity_id)
 		{
 			const char* type = utility::get_type_name<T>();
 			auto& components = ledger[entity_id];
 			
-			component_iterator<T> begin(component_set.begin(), components.begin(), type, component_set.count());
+			component_iterator<T> begin(component_set.begin(), components.begin(), type, components.count());
 			component_iterator<T> end(component_set.end(), components.end(), type, 0);
 			
-			return components_view<T>(begin, end);
+			return components_view<component_iterator<T>>(begin, end);
 		}
 
 		template<typename T>
-		components_view<T>
+		components_view<component_iterator<T>>
 		get_world_components()
 		{
 			const char* type = utility::get_type_name<T>();
@@ -152,10 +152,10 @@ namespace ecs
 			component_iterator<T> begin(component_set.begin(), components.begin(), type, components.count());
 			component_iterator<T> end(component_set.end(), components.end(), type, 0);
 
-			return components_view<T>(begin, end);
+			return components_view<component_iterator<T>>(begin, end);
 		}
 
-		API_ECS generic_components_view
+		API_ECS components_view<generic_component_iterator>
 		get_all_entity_properties(cpprelude::u64 entity_id);
 		
 		API_ECS sparse_unordered_set<Component>&

@@ -15,6 +15,7 @@ int main()
 {
 	World w;
 	auto entity = w.create_entity();
+	auto entity2 = w.create_entity();
 	w.add_property<u32>(entity.id, (u32)2389);
 	w.add_property<u32>(entity.id, (u32)8983);
 	r32 data = 34.7;
@@ -22,15 +23,15 @@ int main()
 	w.add_property<r32>(entity.id, (r32)34.740);
 	w.add_property<u32>(entity.id, (u32)347930);
 
-	auto components = w.get_entity_properties<u32>(0);
+	auto components = w.get_all_entity_properties(entity.id);
 	for (auto& component : components)
-			++component;
+			std::cout << component.utils->type << std::endl;
 
 	auto components2 = w.get_world_components<u32>();
 	for (auto component : components2)
 		std::cout << component << std::endl;
 
-	auto all_components = w.get_all_entity_properties(0);
+	auto all_components = w.get_all_entity_properties(entity2.id);
 	for (auto component : all_components)
 		std::cout << component.utils->type << std::endl;
 		

@@ -34,7 +34,7 @@ namespace ecs
 
 		template<typename T>
 		T&
-		add_property(cpprelude::u64 entity_id, T value)
+		add_property(cpprelude::u64 entity_id, const T& value)
 		{
 			ecs::Component component;
 			component.utils = utility::get_type_utils<T>();
@@ -48,6 +48,42 @@ namespace ecs
 			type_table[component.utils->type].insert_back(component_index);
 
 			return *(static_cast<T*>(component.data));	
+		}
+
+		template<typename T>
+		T&
+		add_property(cpprelude::u64 entity_id, T&& value)
+		{
+			ecs::Component component;
+			component.utils = utility::get_type_utils<T>();
+			component.data = _context->alloc<T>();
+			new (component.data) T(std::move(value));
+			component.dynamically_allocated = true;
+
+			component_set.insert(component);
+			cpprelude::usize component_index = component_set.count() - 1;
+			ledger[entity_id].insert_back(component_index);
+			type_table[component.utils->type].insert_back(component_index);
+
+			return *(static_cast<T*>(component.data));
+		}
+
+		template<typename T, typename ... TArgs>
+		T&
+		add_property(cpprelude::u64 entity_id, TArgs&& ... args)
+		{
+			ecs::Component component;
+			component.utils = utility::get_type_utils<T>();
+			component.data = _context->alloc<T>();
+			new (component.data) T(std::forward<TArgs>(args)...);
+			component.dynamically_allocated = true;
+
+			component_set.insert(component);
+			cpprelude::usize component_index = component_set.count() - 1;
+			ledger[entity_id].insert_back(component_index);
+			type_table[component.utils->type].insert_back(component_index);
+
+			return *(static_cast<T*>(component.data));
 		}
 
 		template<typename T>

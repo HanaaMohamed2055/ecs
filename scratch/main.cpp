@@ -11,28 +11,42 @@ using namespace cpprelude;
 using namespace utility;
 
 
+struct Position
+{
+	r32 x = 0.0f;
+	r32 y = 0.0f;
+	r32 z = 0.0f;
+
+	Position()
+	{}
+
+	Position(r32 i, r32 j, r32 k)
+		:x(i), y(j), z(k)
+	{}
+};
+
+
 int main()
 {
 	World w;
-	auto entity = w.create_entity();
-	auto entity2 = w.create_entity();
-	w.add_property<u32>(entity.id, (u32)2389);
-	w.add_property<u32>(entity.id, (u32)8983);
-	r32 data = 34.7;
-	w.add_property<r32>(entity.id, &data);
-	w.add_property<r32>(entity.id, (r32)34.740);
-	w.add_property<u32>(entity.id, (u32)347930);
 
-	auto components = w.get_all_entity_properties(entity.id);
-	for (auto& component : components)
-			std::cout << component.utils->type << std::endl;
+	auto e1 = w.create_entity();
+	auto e2 = w.create_entity();
+	auto e3 = w.create_entity();
 
-	auto components2 = w.get_world_components<u32>();
-	for (auto component : components2)
-		std::cout << component << std::endl;
+	
 
-	auto all_components = w.get_all_entity_properties(entity2.id);
-	for (auto component : all_components)
-		std::cout << component.utils->type << std::endl;
-		
+	w.add_property<Position>(e1.id, 0.0f, 0.0f, 1.0f);
+
+	w.add_property<Position>(e2.id, 1.0f, 1.1f, 1.2f);
+	
+	w.add_property<Position>(e3.id, Position(2.0f, 3.0f, 5.0f));
+
+	auto positions = w.get_world_components<Position>();
+	for (auto& position : positions)
+		position.x += 4;
+	
+	std::cout << w.get<Position>(e1.id).x << std::endl;
+	for (auto position : positions)
+		std::cout << position.x << " " << position.y << " " << position.z << std::endl;
 }

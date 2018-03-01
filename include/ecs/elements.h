@@ -18,6 +18,11 @@ namespace ecs
 	{
 		cpprelude::u64 id = INVALID_ID;
 		World* world = nullptr;
+
+		bool valid()
+		{
+			return id != INVALID_ID && world != nullptr;
+		}
 	};
 
 	struct Component

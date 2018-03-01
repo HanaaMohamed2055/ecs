@@ -19,6 +19,10 @@ namespace ecs
 		Component* _values;
 		cpprelude::sequential_iterator<cpprelude::usize> _index_it;
 
+		generic_component_iterator()
+			:_values(nullptr), _index_it(nullptr)
+		{}
+
 		generic_component_iterator(const sparse_set_iterator<Component>& set_it, const cpprelude::sequential_iterator<cpprelude::usize>& index_it)
 			:_values(set_it._values), _index_it(index_it)
 		{}
@@ -101,6 +105,10 @@ namespace ecs
 		cpprelude::sequential_iterator<cpprelude::usize> _index_it;
 		const char* _type;
 		cpprelude::usize _size = 0;
+
+		component_iterator()
+			:_values(nullptr), _index_it(nullptr), _size(0)
+		{}
 
 		component_iterator(const sparse_set_iterator<Component>& set_it, cpprelude::sequential_iterator<cpprelude::usize> index_it, const char* type, cpprelude::usize size)
 			:_values(set_it._values), _index_it(index_it), _type(type), _size(size)
@@ -210,6 +218,9 @@ namespace ecs
 	{
 		iterator _begin_it;
 		iterator _end_it;
+
+		view()
+		{}
 
 		view(iterator begin_it, iterator end_it)
 			:_begin_it(begin_it), _end_it(end_it)

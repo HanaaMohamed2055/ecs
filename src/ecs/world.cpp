@@ -14,12 +14,17 @@ namespace ecs
 	}
 	
 	view<generic_component_iterator>
-	World::get_all_entity_properties(cpprelude::u64 entity_id)
+	World::get_all_entity_properties(Entity e)
 	{
-		auto& components = ledger[entity_id];
-		generic_component_iterator begin(component_set.begin(), components.begin());
-		generic_component_iterator end(component_set.end(), components.end());
-		return view<generic_component_iterator>(begin, end);
+		if (e.id != INVALID_ID && e.world == this)
+		{
+			auto& components = ledger[e.id];
+			generic_component_iterator begin(component_set.begin(), components.begin());
+			generic_component_iterator end(component_set.end(), components.end());
+			return view<generic_component_iterator>(begin, end);
+		}
+
+		return view<generic_component_iterator>();
 	}
 
 	sparse_unordered_set<Component>&
@@ -35,14 +40,17 @@ namespace ecs
 	}
 
 	void
-	World::kill_entity(cpprelude::u64 id)
+		World::kill_entity(Entity& e)
 	{
+		if (e.id == INVALID_ID || e.world != this)
+			return;
+
 		// remove the entity
-		entity_set.remove(id);
+		entity_set.remove(e.id);
 
 		// remove the entity components
-		auto entity_components = ledger[id];
-		for (auto index : entity_components)
+		auto entity_components = ledger[e.id];
+		for (auto index: entity_components)
 		{
 			auto& component = component_set[index];
 			
@@ -56,15 +64,18 @@ namespace ecs
 		
 			component_set.remove_at(index);
 		}
+		ledger.remove(e.id);
 
-		ledger.remove(id);
+		// invalidate the entity
+		e.id = INVALID_ID;
+		e.world == nullptr;
 	}
 
 	void
 	World::clean_up()
 	{
 		// deallocate only the memory allocated by the ecs 
-		for (auto& component : component_set)
+		for (auto& component: component_set)
 		{
 			if (component.dynamically_allocated)
 				component.utils->free(component.data, _context);

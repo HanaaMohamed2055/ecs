@@ -78,7 +78,8 @@ namespace ecs
 			std::swap(_dense[_dense.count() - 1], _dense[index]);
 			_dense.remove_back();
 		}
-
+		
+		// [] and at are used to retrieve the object using its index in the dense container
 		T&
 		operator[](cpprelude::usize index)
 		{
@@ -103,6 +104,19 @@ namespace ecs
 			return _sparse[_dense[index]];
 		}
 		
+		// get is used to retrieve the object using its actual index (in the sparse container)
+		T&
+		get(cpprelude::usize index)
+		{
+			return _sparse[index];
+		}
+
+		const T&
+		get(cpprelude::usize index) const
+		{
+			return _sparse[index];
+		}
+
 		cpprelude::usize
 		count() const
 		{

@@ -24,6 +24,7 @@ namespace ecs
 	{
 		void* data = nullptr;
 		utility::base_type_utils* utils = nullptr;
+		cpprelude::u64 entity_id;
 		bool dynamically_allocated = false;
 	};
 }

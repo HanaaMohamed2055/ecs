@@ -13,13 +13,13 @@ namespace ecs
 		return entity_set[index];
 	}
 	
-	components_view<generic_component_iterator>
+	view<generic_component_iterator>
 	World::get_all_entity_properties(cpprelude::u64 entity_id)
 	{
 		auto& components = ledger[entity_id];
 		generic_component_iterator begin(component_set.begin(), components.begin());
 		generic_component_iterator end(component_set.end(), components.end());
-		return components_view<generic_component_iterator>(begin, end);
+		return view<generic_component_iterator>(begin, end);
 	}
 
 	sparse_unordered_set<Component>&

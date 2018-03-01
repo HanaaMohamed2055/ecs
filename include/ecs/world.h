@@ -41,6 +41,7 @@ namespace ecs
 			component.data = _context->alloc<T>();
 			new (component.data) T(value);
 			component.dynamically_allocated = true;
+			component.entity_id = entity_id;
 		
 			component_set.insert(component);
 			cpprelude::usize component_index = component_set.count() - 1;
@@ -59,6 +60,7 @@ namespace ecs
 			component.data = _context->alloc<T>();
 			new (component.data) T(std::move(value));
 			component.dynamically_allocated = true;
+			component.entity_id = entity_id;
 
 			component_set.insert(component);
 			cpprelude::usize component_index = component_set.count() - 1;
@@ -77,6 +79,7 @@ namespace ecs
 			component.data = _context->alloc<T>();
 			new (component.data) T(std::forward<TArgs>(args)...);
 			component.dynamically_allocated = true;
+			component.entity_id = entity_id;
 
 			component_set.insert(component);
 			cpprelude::usize component_index = component_set.count() - 1;
@@ -142,7 +145,7 @@ namespace ecs
 				if(component.dynamically_allocated)
 					component.utils->free(component.data, _context);
 				
-				component_set.remove_by_index(index);
+				component_set.remove_at(index);
 
 				std::swap(entity_components[i], entity_components[last_index--]);
 			}
@@ -166,7 +169,7 @@ namespace ecs
 		}
 		
 		template<typename T>
-		components_view<component_iterator<T>>
+		view<component_iterator<T>>
 		get_entity_properties(cpprelude::u64 entity_id)
 		{
 			const char* type = utility::get_type_name<T>();
@@ -175,11 +178,11 @@ namespace ecs
 			component_iterator<T> begin(component_set.begin(), components.begin(), type, components.count());
 			component_iterator<T> end(component_set.end(), components.end(), type, 0);
 			
-			return components_view<component_iterator<T>>(begin, end);
+			return view<component_iterator<T>>(begin, end);
 		}
 
 		template<typename T>
-		components_view<component_iterator<T>>
+		view<component_iterator<T>>
 		get_world_components()
 		{
 			const char* type = utility::get_type_name<T>();
@@ -188,10 +191,10 @@ namespace ecs
 			component_iterator<T> begin(component_set.begin(), components.begin(), type, components.count());
 			component_iterator<T> end(component_set.end(), components.end(), type, 0);
 
-			return components_view<component_iterator<T>>(begin, end);
+			return view<component_iterator<T>>(begin, end);
 		}
 
-		API_ECS components_view<generic_component_iterator>
+		API_ECS view<generic_component_iterator>
 		get_all_entity_properties(cpprelude::u64 entity_id);
 		
 		API_ECS sparse_unordered_set<Component>&

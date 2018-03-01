@@ -19,7 +19,7 @@ namespace ecs
 		Component* _values;
 		cpprelude::sequential_iterator<cpprelude::usize> _index_it;
 
-		generic_component_iterator(const sparse_set_iterator<Component>& set_it, cpprelude::sequential_iterator<cpprelude::usize> index_it)
+		generic_component_iterator(const sparse_set_iterator<Component>& set_it, const cpprelude::sequential_iterator<cpprelude::usize>& index_it)
 			:_values(set_it._values), _index_it(index_it)
 		{}
 
@@ -78,6 +78,12 @@ namespace ecs
 		operator*() const
 		{
 			return _values[*_index_it];
+		}
+
+		value_type*
+		operator->()
+		{
+			return _values + *_index_it;
 		}
 	};
 	
@@ -191,15 +197,21 @@ namespace ecs
 			auto component = _values[*_index_it];
 			return *(static_cast<value_type*>(component.data));
 		}
+
+		Component*
+		operator->()
+		{
+			return _values + *_index_it;
+		}
 	};
 
 	template<typename iterator>
-	struct components_view
+	struct view
 	{
 		iterator _begin_it;
 		iterator _end_it;
 
-		components_view(iterator begin_it, iterator end_it)
+		view(iterator begin_it, iterator end_it)
 			:_begin_it(begin_it), _end_it(end_it)
 		{}
 

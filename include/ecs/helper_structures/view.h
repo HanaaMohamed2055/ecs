@@ -90,6 +90,7 @@ namespace ecs
 			return _values + *_index_it;
 		}
 	};
+
 	
 	template<typename T>
 	struct component_iterator

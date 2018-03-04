@@ -9,7 +9,6 @@ namespace utility
 
 namespace ecs
 {
-	// I doubt I need this now but let's leave it here until I am sure
 	constexpr cpprelude::u64 INVALID_ID = -1UL;
 
 	struct World;
@@ -29,7 +28,7 @@ namespace ecs
 	{
 		void* data = nullptr;
 		utility::base_type_utils* utils = nullptr;
-		cpprelude::u64 entity_id;
+		Entity* entity;
 		bool dynamically_allocated = false;
 	};
 }

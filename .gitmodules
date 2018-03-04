@@ -4,7 +4,3 @@
 [submodule "deps/cpprelude"]
 	path = deps/cpprelude
 	url = git@github.com:Symbyo360/cpprelude.git
-[submodule "scratch/deps/entt"]
-	path = scratch/deps/entt
-	url = git@github.com:skypjack/entt.git
-	branch = master

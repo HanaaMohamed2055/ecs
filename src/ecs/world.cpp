@@ -6,11 +6,11 @@ namespace ecs
 	World::create_entity()
 	{
 		cpprelude::u64 entity_id = entity_set.insert(Entity());
-		cpprelude::usize index = entity_set.count() - 1;
-		entity_set[index].id = entity_id;
-		entity_set[index].world = this;
+		Entity& entity = entity_set[entity_set.count() - 1];
+		entity.id = entity_id;
+		entity.world = this;
 
-		return entity_set[index];
+		return entity;
 	}
 	
 	view<generic_component_iterator>
@@ -40,7 +40,7 @@ namespace ecs
 	}
 
 	void
-		World::kill_entity(Entity& e)
+	World::kill_entity(Entity& e)
 	{
 		if (e.id == INVALID_ID || e.world != this)
 			return;

@@ -4,7 +4,7 @@ project "scratch"
 	targetdir (bin_path .. "/%{cfg.platform}/%{cfg.buildcfg}/")
 	location (build_path .. "/scratch/")
 
-	files {"**.cpp"}
+	files {"**.cpp", "**.h"}
 
 	includedirs {
 		ecs_path .. "/include",

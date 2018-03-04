@@ -20,7 +20,7 @@ namespace ecs
 		component_types_table type_table;
 		cpprelude::hash_array<cpprelude::u64, cpprelude::dynamic_array<cpprelude::usize>> ledger;
 		cpprelude::memory_context* _context;
-
+	
 		World(cpprelude::memory_context* context = cpprelude::platform->global_memory)
 			:_context(context),
 			ledger(context),
@@ -57,7 +57,7 @@ namespace ecs
 				component.data = _context->alloc<T>();
 				new (component.data) T(value);
 				component.dynamically_allocated = true;
-				component.entity_id = e.id;
+				component.entity = &(entity_set.get(e.id));
 
 				component_set.insert(component);
 				cpprelude::usize component_index = component_set.count() - 1;
@@ -79,7 +79,7 @@ namespace ecs
 				component.data = _context->alloc<T>();
 				new (component.data) T(std::move(value));
 				component.dynamically_allocated = true;
-				component.entity_id = e.id;
+				component.entity = &(entity_set.get(e.id));
 
 				component_set.insert(component);
 				cpprelude::usize component_index = component_set.count() - 1;
@@ -101,12 +101,13 @@ namespace ecs
 				component.data = _context->alloc<T>();
 				new (component.data) T(std::forward<TArgs>(args)...);
 				component.dynamically_allocated = true;
-				component.entity_id = e.id;
+				component.entity = &(entity_set.get(e.id));
 
 				component_set.insert(component);
 				cpprelude::usize component_index = component_set.count() - 1;
 				ledger[e.id].insert_back(component_index);
-				type_table[component.utils->type].insert_back(component_index);
+				auto& typed_components = type_table[component.utils->type];
+				typed_components.insert_back(component_index);
 
 				return *(static_cast<T*>(component.data));
 			}
@@ -122,6 +123,7 @@ namespace ecs
 				component.data = data;
 				component.utils = utility::get_type_utils<T>();
 				component.entity_id = e.id;
+				component.entity = &(entity_set.get(e.id));
 
 				component_set.insert(component);
 				cpprelude::usize component_index = component_set.count() - 1;
@@ -160,9 +162,9 @@ namespace ecs
 				
 			auto& entity_components = ledger[e.id];
 			auto& typed_components = type_table[type];
-			cpprelude::usize last_index = entity_components.count() - 1;
+			cpprelude::isize last_index = entity_components.count() > 0 ? entity_components.count() - 1: -2;
 			
-			for (cpprelude::usize i = 0; i <= last_index; ++i)
+			for (cpprelude::isize i = 0; i <= last_index; ++i)
 			{
 				auto index = entity_components[i];
 				auto& component = component_set[index];
@@ -183,7 +185,8 @@ namespace ecs
 				std::swap(entity_components[i], entity_components[last_index--]);
 			}
 
-			entity_components.remove_back(entity_components.count() - last_index - 1);
+			if(last_index > -2)
+				entity_components.remove_back(entity_components.count() - last_index - 1);
 		}
 
 		template<typename T>

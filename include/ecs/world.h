@@ -37,9 +37,8 @@ namespace ecs
 		add_entity(T& entity)
 		{
 			cpprelude::u64 entity_id = entity_set.insert(Entity());
-			cpprelude::usize index = entity_set.count() - 1;
-			entity_set[index].id = entity_id;
-			entity_set[index].world = this;
+			entity_set[entity_id].id = entity_id;
+			entity_set[entity_id].world = this;
 			
 			entity.id = entity_id;
 			entity.world = this;
@@ -57,10 +56,9 @@ namespace ecs
 				component.data = _context->alloc<T>();
 				new (component.data) T(value);
 				component.dynamically_allocated = true;
-				component.entity = &(entity_set.get(e.id));
-
-				component_set.insert(component);
-				cpprelude::usize component_index = component_set.count() - 1;
+				component.entity = &(entity_set[e.id]);
+								
+				cpprelude::usize component_index = component_set.insert(component);
 				ledger[e.id].insert_back(component_index);
 				type_table[component.utils->type].insert_back(component_index);
 
@@ -79,10 +77,9 @@ namespace ecs
 				component.data = _context->alloc<T>();
 				new (component.data) T(std::move(value));
 				component.dynamically_allocated = true;
-				component.entity = &(entity_set.get(e.id));
+				component.entity = &(entity_set.[e.id]);
 
-				component_set.insert(component);
-				cpprelude::usize component_index = component_set.count() - 1;
+				cpprelude::usize component_index = component_set.insert(component);
 				ledger[e.id].insert_back(component_index);
 				type_table[component.utils->type].insert_back(component_index);
 
@@ -101,13 +98,11 @@ namespace ecs
 				component.data = _context->alloc<T>();
 				new (component.data) T(std::forward<TArgs>(args)...);
 				component.dynamically_allocated = true;
-				component.entity = &(entity_set.get(e.id));
+				component.entity = &(entity_set[e.id]);
 
-				component_set.insert(component);
-				cpprelude::usize component_index = component_set.count() - 1;
+				cpprelude::usize component_index = component_set.insert(component);
 				ledger[e.id].insert_back(component_index);
-				auto& typed_components = type_table[component.utils->type];
-				typed_components.insert_back(component_index);
+				type_table[component.utils->type].insert_back(component_index);
 
 				return *(static_cast<T*>(component.data));
 			}
@@ -123,10 +118,9 @@ namespace ecs
 				component.data = data;
 				component.utils = utility::get_type_utils<T>();
 				component.entity_id = e.id;
-				component.entity = &(entity_set.get(e.id));
+				component.entity = &(entity_set[e.id]);
 
-				component_set.insert(component);
-				cpprelude::usize component_index = component_set.count() - 1;
+				cpprelude::usize component_index = component_set.insert(component);
 				ledger[e.id].insert_back(component_index);
 				type_table[component.utils->type].insert_back(component_index);
 			}
@@ -141,7 +135,7 @@ namespace ecs
 				const char* type = utility::get_type_name<T>();
 				auto& components = ledger[e.id];
 
-				for (auto index : components)
+				for (auto index: components)
 				{
 					if (component_set[index].utils->type == type)
 						return true;
@@ -172,7 +166,6 @@ namespace ecs
 				if (component.utils->type != type)
 					continue;
 
-				auto& typed_components = type_table[component.utils->type];
 				auto itr = std::find(typed_components.begin(), typed_components.end(), index);
 				std::swap(typed_components[typed_components.count() - 1], *itr);
 				typed_components.remove_back();
@@ -180,7 +173,7 @@ namespace ecs
 				if(component.dynamically_allocated)
 					component.utils->free(component.data, _context);
 				
-				component_set.remove_at(index);
+				component_set.remove(index);
 
 				std::swap(entity_components[i], entity_components[last_index--]);
 			}
@@ -216,8 +209,8 @@ namespace ecs
 				const char* type = utility::get_type_name<T>();
 				auto& components = ledger[e.id];
 
-				component_iterator<T> begin(component_set.begin(), components.begin(), type, components.count());
-				component_iterator<T> end(component_set.end(), components.end(), type, 0);
+				component_iterator<T> begin(&component_set, components.begin(), type, components.count());
+				component_iterator<T> end(&component_set, components.end(), type, 0);
 
 				return view<component_iterator<T>>(begin, end);
 			}
@@ -232,8 +225,8 @@ namespace ecs
 			const char* type = utility::get_type_name<T>();
 			auto& components = type_table[type];
 
-			component_iterator<T> begin(component_set.begin(), components.begin(), type, components.count());
-			component_iterator<T> end(component_set.end(), components.end(), type, 0);
+			component_iterator<T> begin(&component_set, components.begin(), type, components.count());
+			component_iterator<T> end(&component_set, components.end(), type, 0);
 
 			return view<component_iterator<T>>(begin, end);
 		}

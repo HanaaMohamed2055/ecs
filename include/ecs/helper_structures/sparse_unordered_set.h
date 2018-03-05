@@ -8,17 +8,19 @@
 
 namespace ecs
 {
-	template<typename T>
-	struct sparse_set_iterator;
+	
+	// This structure exists mainly to facilitate the following:
+	// 1- iterating densely through the _dense container using range_based loops and iterators
+	// 2- Maintaining access by ID/actual_index  and asking for membership
 
 	template<typename T>
 	struct sparse_unordered_set
 	{
-		using iterator = sparse_set_iterator<T>;
-		using const_iterator = sparse_set_iterator<const T>;
+		using iterator = cpprelude::sequential_iterator<T>;
+		using const_iterator = cpprelude::sequential_iterator<const T>;
 
-		cpprelude::dynamic_array<cpprelude::usize> _dense;
-		bag<T> _sparse;
+		cpprelude::dynamic_array<T> _dense;
+		bag<cpprelude::usize> _sparse;
 
 		sparse_unordered_set(cpprelude::memory_context* context = cpprelude::platform->global_memory)
 			:_dense(context),
@@ -30,93 +32,69 @@ namespace ecs
 		cpprelude::usize
 		emplace(TArgs&& ... args)
 		{
-			cpprelude::usize actual_index = _sparse.emplace(std::forward<TArgs>(args)...);
-			_dense.insert_back(actual_index);
-			
+			_dense.emplace_back(std::forward<TArgs>(args)...);
+			cpprelude::usize actual_index = _sparse.insert(_dense.count() - 1);
+						
 			return actual_index;
 		}
 
 		cpprelude::usize
 		insert(T&& value)
 		{
-			cpprelude::usize actual_index = _sparse.insert(std::move(value));
-			_dense.insert_back(actual_index);
-		
+			_dense.insert_back(std::move(value));
+			cpprelude::usize actual_index = _sparse.insert(_dense.count() - 1);
+
 			return actual_index;
 		}
 
 		cpprelude::usize
 		insert(const T& value)
 		{
-			cpprelude::usize actual_index = _sparse.insert(value);
-			_dense.insert_back(actual_index);
-		
+			_dense.insert_back(value);
+			cpprelude::usize actual_index = _sparse.insert(_dense.count() - 1);
+					
 			return actual_index;
 		}
 
 		bool
+		has(cpprelude::usize actual_index)
+		{
+			return _sparse[actual_index] < _dense.count() && _sparse.is_slot_occupied(actual_index);
+		}
+
+		void
 		remove(cpprelude::usize index)
 		{
-			auto itr = std::find(_dense.begin(), _dense.end(), index);
-			if (itr != _dense.end())
-			{
-				std::swap(_dense[_dense.count() - 1], *itr);
-				_dense.remove_back();
-				_sparse.remove(index);
-				return true;
-			}
-			return false;
-		}
-		
-		void 
-		remove_at(cpprelude::usize index)
-		{
-			if (index >= _dense.count())
-				return;
-			cpprelude::usize actual_index = _dense[index];
+			cpprelude::usize actual_index = _sparse[index];
 			_sparse.remove(actual_index);
-			std::swap(_dense[_dense.count() - 1], _dense[index]);
-			_dense.remove_back();
+			std::swap(_dense[actual_index], _dense[_dense.count() - 1]);
 		}
 		
-		// [] and at are used to retrieve the object using its index in the dense container
+		// [] and at are used to retrieve the object using its index in the sparse container
 		T&
-		operator[](cpprelude::usize index)
+		operator[](cpprelude::usize actual_index)
 		{
-			return _sparse[_dense[index]];
+			return _dense[_sparse[actual_index]];
 		}
 
 		const T&
-		operator[](cpprelude::usize index) const
+		operator[](cpprelude::usize actual_index) const
 		{
-			return _sparse[_dense[index]];
+			return _dense[_sparse[actual_index]];
 		}
 
 		T&
-		at(cpprelude::usize index)
+		at(cpprelude::usize actual_index)
 		{
-			return _sparse[_dense[index]];
+			return _dense[_sparse[actual_index]];
 		}
 
 		const T&
-		at(cpprelude::usize index) const
+		at(cpprelude::usize actual_index) const
 		{
-			return _sparse[_dense[index]];
+			return _dense[_sparse[actual_index]];
 		}
 		
-		// get is used to retrieve the object using its actual index (in the sparse container)
-		T&
-		get(cpprelude::usize index)
-		{
-			return _sparse[index];
-		}
-
-		const T&
-		get(cpprelude::usize index) const
-		{
-			return _sparse[index];
-		}
-
 		cpprelude::usize
 		count() const
 		{
@@ -145,121 +123,42 @@ namespace ecs
 		const_iterator
 		begin() const
 		{
-			return const_iterator(_sparse.begin(), _dense.begin());
+			return _dense.begin();
 		}
 
 		iterator
 		begin()
 		{
-			return iterator(_sparse.begin(), _dense.begin());
+			return _dense.begin();
 		}
 
 		const_iterator
 		cbegin() const
 		{
-			return const_iterator(_sparse.cbegin(), _dense.cbegin());
+			return _dense.cbegin();
 		}
 
 		const_iterator
 		end() const
 		{
-			return const_iterator(_sparse.begin(), _dense.end());
+			return _dense.end();
 		}
 
 		iterator
 		end()
 		{
-			return iterator(_sparse.begin(), _dense.end());
+			return _dense.end();
 		}
 
 		const_iterator
 		cend()
 		{
-			return const_iterator(_sparse.begin(), _dense.end());
+			return _dense.end();
 		}
 
 		~sparse_unordered_set()
 		{
 
-		}
-	};
-
-	template<typename T>
-	struct sparse_set_iterator
-	{
-		using iterator_category = std::forward_iterator_tag;
-		using value_type = T;
-		using difference_type = cpprelude::isize;
-		using pointer = T*;
-		using reference = T&;
-		using data_type = T;
-
-		T* _values;
-		cpprelude::sequential_iterator<cpprelude::usize> _index_it;
-			
-		sparse_set_iterator(const bag_iterator<T>& value_it, const cpprelude::sequential_iterator<cpprelude::usize>& index_it)
-			:_values(value_it._element_it._element), _index_it(index_it._element)
-		{}
-
-		sparse_set_iterator(const sparse_set_iterator& other)
-			:_values(other._value_it), _index_it(other._index_it)
-		{}
-
-		sparse_set_iterator(T* value_it, cpprelude::usize index_it)
-			:_values(value_it), _index_it(index_it)
-		{}
-
-		sparse_set_iterator&
-		operator++()
-		{
-			++_index_it;
-			return *this;
-		}
-
-		sparse_set_iterator&
-		operator++(int)
-		{
-			auto result = *this;
-			++_index_it;
-
-			return result;
-		}
-
-		bool
-		operator==(const sparse_set_iterator& other) const
-		{
-			return _index_it == other._index_it 
-				&& _values == other._values;
-		}
-
-		bool
-		operator!=(const sparse_set_iterator& other) const
-		{
-			return !operator==(other);
-		}
-
-		value_type&
-		value()
-		{
-			return _values[*_index_it];
-		}
-
-		const value_type&
-		value() const
-		{
-			return _values[*_index_it];
-		}
-				
-		value_type&
-		operator*()
-		{
-			return _values[*_index_it];
-		}
-
-		const value_type&
-		operator*() const
-		{
-			return _values[*_index_it];
 		}
 	};
 }

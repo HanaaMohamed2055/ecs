@@ -6,7 +6,7 @@ namespace ecs
 	World::create_entity()
 	{
 		cpprelude::u64 entity_id = entity_set.insert(Entity());
-		Entity& entity = entity_set[entity_set.count() - 1];
+		Entity& entity = entity_set[entity_id];
 		entity.id = entity_id;
 		entity.world = this;
 
@@ -19,8 +19,8 @@ namespace ecs
 		if (e.id != INVALID_ID && e.world == this)
 		{
 			auto& components = ledger[e.id];
-			generic_component_iterator begin(component_set.begin(), components.begin());
-			generic_component_iterator end(component_set.end(), components.end());
+			generic_component_iterator begin(&component_set, components.begin());
+			generic_component_iterator end(&component_set, components.end());
 			return view<generic_component_iterator>(begin, end);
 		}
 
@@ -62,7 +62,7 @@ namespace ecs
 			if(component.dynamically_allocated)
 				component.utils->free(component.data, _context);
 		
-			component_set.remove_at(index);
+			component_set.remove(index);
 		}
 		ledger.remove(e.id);
 

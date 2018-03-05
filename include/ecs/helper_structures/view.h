@@ -16,19 +16,19 @@ namespace ecs
 		using reference = Component&;
 		using data_type = Component;
 
-		Component* _values;
+		sparse_unordered_set<Component>* component_set;
 		cpprelude::sequential_iterator<cpprelude::usize> _index_it;
 
 		generic_component_iterator()
-			:_values(nullptr), _index_it(nullptr)
+			:component_set(nullptr), _index_it(nullptr)
 		{}
 
-		generic_component_iterator(const sparse_set_iterator<Component>& set_it, const cpprelude::sequential_iterator<cpprelude::usize>& index_it)
-			:_values(set_it._values), _index_it(index_it)
+		generic_component_iterator(sparse_unordered_set<Component>* set, const cpprelude::sequential_iterator<cpprelude::usize>& index_it)
+			:component_set(set), _index_it(index_it)
 		{}
 
 		generic_component_iterator(const generic_component_iterator& other)
-			:_values(other._values), _index_it(other._index_it)
+			:component_set(other.component_set), _index_it(other._index_it)
 		{}
 
 		generic_component_iterator&
@@ -51,7 +51,7 @@ namespace ecs
 		operator==(const generic_component_iterator& other) const
 		{
 			return _index_it == other._index_it
-				&& _values == other._values;
+				&& component_set == other.component_set;
 		}
 
 		bool
@@ -63,31 +63,31 @@ namespace ecs
 		value_type&
 		value()
 		{
-			return _values[*_index_it];
+			return component_set->at(*_index_it);
 		}
 
 		const value_type&
 		value() const
 		{
-			return _values[*_index_it];
+			return component_set->at(*_index_it);
 		}
 		
 		value_type&
 		operator*()
 		{
-			return _values[*_index_it];
+			return component_set->at(*_index_it);
 		}
 
 		const value_type&
 		operator*() const
 		{
-			return _values[*_index_it];
+			return component_set->at(*_index_it);
 		}
 
 		value_type*
 		operator->()
 		{
-			return _values + *_index_it;
+			return component_set->_dense.data() + component_set->_sparse[*_index_it];
 		}
 	};
 
@@ -102,19 +102,19 @@ namespace ecs
 		using reference = T&;
 		using data_type = T;
 
-		Component* _values;
+		sparse_unordered_set<Component>* component_set;
 		cpprelude::sequential_iterator<cpprelude::usize> _index_it;
 		const char* _type;
 		cpprelude::usize _size = 0;
 
 		component_iterator()
-			:_values(nullptr), _index_it(nullptr), _size(0)
+			:component_set(nullptr), _index_it(nullptr), _size(0)
 		{}
 
-		component_iterator(const sparse_set_iterator<Component>& set_it, cpprelude::sequential_iterator<cpprelude::usize> index_it, const char* type, cpprelude::usize size)
-			:_values(set_it._values), _index_it(index_it), _type(type), _size(size)
+		component_iterator(sparse_unordered_set<Component>* set, cpprelude::sequential_iterator<cpprelude::usize> index_it, const char* type, cpprelude::usize size)
+			:component_set(set), _index_it(index_it), _type(type), _size(size)
 		{
-			while (_size > 0 && _values[*_index_it].utils->type != _type)
+			while (_size > 0 && component_set->at(*_index_it).utils->type != _type)
 			{
 				++_index_it;
 				--_size;
@@ -122,9 +122,9 @@ namespace ecs
 		}
 
 		component_iterator(const component_iterator& other)
-			:_values(other._values), _index_it(other._index_it), _type(other._type), _size(other._size)
+			:component_set(other.component_set), _index_it(other._index_it), _type(other._type), _size(other._size)
 		{
-			while (_size > 0 && _values[*_index_it].utils->type != _type)
+			while (_size > 0 && component_set->at(*_index_it).utils->type != _type)
 			{
 				++_index_it;
 				--_size;
@@ -137,7 +137,7 @@ namespace ecs
 			++_index_it;
 			--_size;
 			
-			while (_size > 0 && _values[*_index_it].utils->type != _type)
+			while (_size > 0 && component_set->at(*_index_it).utils->type != _type)
 			{
 				++_index_it;
 				--_size;
@@ -153,7 +153,7 @@ namespace ecs
 			++_index_it;
 			--_size;
 
-			while (_size > 0 && _values[*_index_it].utils->type != _type)
+			while (_size > 0 && component_set->at(*_index_it).utils->type != _type)
 			{
 				++_index_it;
 				--_size;
@@ -165,7 +165,7 @@ namespace ecs
 		bool operator==(const component_iterator& other) const
 		{
 			return _index_it == other._index_it
-				&& _values == other._values;
+				&& component_set == other.component_set;
 		}
 
 		bool operator!=(const component_iterator& other) const
@@ -176,41 +176,41 @@ namespace ecs
 		value_type&
 		data()
 		{
-			auto component = _values[*_index_it];
+			auto component = component_set->at(*_index_it);
 			return *(static_cast<value_type*>(component.data));
 		}
 
 		const value_type&
 		data() const
 		{
-			auto component = _values[*_index_it];
+			auto component = component_set->at(*_index_it);
 			return *(static_cast<value_type*>(component.data));
 		}
 
 		Component&
 		value()
 		{
-			return _values[*_index_it];
+			return component_set->at(*_index_it);
 		}
 
 		value_type&
 		operator*()
 		{
-			auto component = _values[*_index_it];
+			auto component = component_set->at(*_index_it);
 			return *(static_cast<value_type*>(component.data));
 		}
 
 		const value_type&
 		operator*() const
 		{
-			auto component = _values[*_index_it];
+			auto component = component_set->at(*_index_it);
 			return *(static_cast<value_type*>(component.data));
 		}
 
 		Component*
 		operator->()
 		{
-			return _values + *_index_it;
+			return component_set->_dense.data() + component_set->_sparse[*_index_it];
 		}
 	};
 

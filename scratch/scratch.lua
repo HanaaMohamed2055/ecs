@@ -1,3 +1,5 @@
+local entt_path = "deps/entt"
+
 project "scratch"
 	kind "ConsoleApp"
 	language "C++"
@@ -9,6 +11,7 @@ project "scratch"
 	includedirs {
 		ecs_path .. "/include",
 		cpprelude_path .. "/include",
+		entt_path .. "/src"
 	}
 
 	links {"cpprelude", "ecs"}

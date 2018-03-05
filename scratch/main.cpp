@@ -1,4 +1,5 @@
 
+#include <entt/entity/registry.hpp>
 #include <cpprelude/defines.h>
 #include <cpprelude/string.h>
 #include <cpprelude/dynamic_array.h>
@@ -38,7 +39,7 @@ int main()
 	auto e = w.create_entity();
 	auto e1 = w.create_entity();
 
-	for(cpprelude::u64 i = 0; i < 1000000; ++i)
+	for(cpprelude::u64 i = 0; i < 100; ++i)
 	{ 
 		auto e = w.create_entity();
 		w.add_property<u32>(e, 838);

@@ -13,15 +13,42 @@ namespace ecs
 
 	struct World;
 	
+	struct ID
+	{
+		cpprelude::u32 number = INVALID_ID;
+		cpprelude::u32 version = -1;
+		
+		ID&
+		operator=(const ID& other)
+		{
+			number = other.number;
+			version = other.version;
+			return *this;
+		}
+
+		bool
+		operator==(const ID& other)
+		{
+			return number == other.number && version == other.version;
+		}
+
+		bool
+		operator!=(const ID& other)
+		{
+			return !operator==(other);
+		}
+		
+		bool
+		valid()
+		{
+			return number != INVALID_ID && version != -1;
+		}
+	};
+
 	struct Entity
 	{
-		cpprelude::u64 id = INVALID_ID;
+		ID id;
 		World* world = nullptr;
-
-		bool valid()
-		{
-			return id != INVALID_ID && world != nullptr;
-		}
 	};
 
 	struct Component

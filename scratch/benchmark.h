@@ -13,43 +13,43 @@ using namespace cpprelude;
 
 // a dummy struct just to test adding components
 
-//struct Position
-//{
-//	r32 x;
-//	r32 y;
-//	
-//	Position()
-//	{}
-//
-//	Position(r32 i, r32 j)
-//		:x(i), y(j)
-//	{}
-//};
-//
-//// creating and destroying component-less entities
-//void 
-//create_ecs_entities(workbench* bench, usize limit)
-//{
-//	ecs::World world;
-//	bench->watch.start();
-//
-//	for (usize i = 0; i < limit; ++i)
-//		world.create_entity();
-//	
-//	bench->watch.stop();
-//}
-//
-//void
-//create_entt_entities(workbench* bench, usize limit)
-//{
-//	entt::DefaultRegistry registry;
-//	bench->watch.start();
-//
-//	for (usize i = 0; i < limit; ++i)
-//		registry.create();
-//
-//	bench->watch.stop();
-//}
+struct Position
+{
+	r32 x;
+	r32 y;
+	
+	Position()
+	{}
+
+	Position(r32 i, r32 j)
+		:x(i), y(j)
+	{}
+};
+
+// creating and destroying component-less entities
+void 
+create_ecs_entities(workbench* bench, usize limit)
+{
+	ecs::World world;
+	bench->watch.start();
+
+	for (usize i = 0; i < limit; ++i)
+		world.create_entity();
+	
+	bench->watch.stop();
+}
+
+void
+create_entt_entities(workbench* bench, usize limit)
+{
+	entt::DefaultRegistry registry;
+	bench->watch.start();
+
+	for (usize i = 0; i < limit; ++i)
+		registry.create();
+
+	bench->watch.stop();
+}
 //
 //
 //void
@@ -84,30 +84,31 @@ using namespace cpprelude;
 //	bench->watch.stop();
 //}
 //
-//// creating, iterating and destroying small entities (entities with only one component)
-//void
-//create_ecs_small_entities(workbench* bench, usize limit)
-//{
-//	ecs::World world;
-//	bench->watch.start();
-//
-//	for (usize i = 0; i < limit; ++i)
-//		world.add_property<Position>(world.create_entity());
-//	
-//	bench->watch.stop();
-//}
-//
-//void
-//create_entt_small_entities(workbench* bench, usize limit)
-//{
-//	entt::DefaultRegistry registry;
-//	bench->watch.start();
-//
-//	for (usize i = 0; i < limit; ++i)
-//		registry.create<Position>();
-//
-//	bench->watch.stop();
-//}
+// creating, iterating and destroying small entities (entities with only one component)
+void
+create_ecs_small_entities(workbench* bench, usize limit)
+{
+	ecs::World world;
+	bench->watch.start();
+	Position p;
+
+	for (usize i = 0; i < limit; ++i)
+		world.add_property<Position>(world.create_entity(), p);
+	
+	bench->watch.stop();
+}
+
+void
+create_entt_small_entities(workbench* bench, usize limit)
+{
+	entt::DefaultRegistry registry;
+	bench->watch.start();
+
+	for (usize i = 0; i < limit; ++i)
+		registry.create<Position>();
+
+	bench->watch.stop();
+}
 //
 //void
 //iterate_ecs_small_entities(workbench* bench, usize limit)
@@ -181,25 +182,25 @@ using namespace cpprelude;
 //	bench->watch.stop();
 //}
 //
-//void
-//benchmark()
-//{
-//	usize limit = 10000;
+void
+benchmark()
+{
+	usize limit = 10000;
+
+	compare_benchmark(std::cout, {
+	CPPRELUDE_BENCHMARK(create_entt_entities, limit),
+	CPPRELUDE_BENCHMARK(create_ecs_entities, limit)
+	});
+	
+	//compare_benchmark(std::cout, {
+	//CPPRELUDE_BENCHMARK(destroy_entt_entities, limit),
+	//CPPRELUDE_BENCHMARK(destroy_ecs_entities, limit)
+	//});
 //
-//	compare_benchmark(std::cout, {
-//	CPPRELUDE_BENCHMARK(create_entt_entities, limit),
-//	CPPRELUDE_BENCHMARK(create_ecs_entities, limit)
-//	});
-//	
-//	compare_benchmark(std::cout, {
-//	CPPRELUDE_BENCHMARK(destroy_entt_entities, limit),
-//	CPPRELUDE_BENCHMARK(destroy_ecs_entities, limit)
-//	});
-//
-//	compare_benchmark(std::cout, {
-//	CPPRELUDE_BENCHMARK(create_entt_small_entities, limit),
-//	CPPRELUDE_BENCHMARK(create_ecs_small_entities, limit)
-//	});
+	compare_benchmark(std::cout, {
+	CPPRELUDE_BENCHMARK(create_entt_small_entities, limit),
+	CPPRELUDE_BENCHMARK(create_ecs_small_entities, limit)
+	});
 //
 //	compare_benchmark(std::cout, {
 //	CPPRELUDE_BENCHMARK(iterate_entt_small_entities, limit),
@@ -210,4 +211,4 @@ using namespace cpprelude;
 //	CPPRELUDE_BENCHMARK(destroy_entt_small_entities, limit),
 //	CPPRELUDE_BENCHMARK(destroy_ecs_small_entities, limit)
 //	});
-//}
+}

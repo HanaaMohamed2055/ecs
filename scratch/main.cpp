@@ -7,11 +7,6 @@
 
 int main()
 {
-	ecs::World w;
-
-	auto e = w.create_entity();
-
-	u32 data = 2302;
-	w.add_property<u32>(e, data);
+	benchmark();
 
 }

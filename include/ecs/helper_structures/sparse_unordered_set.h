@@ -3,8 +3,8 @@
 #include <cpprelude/defines.h>
 #include <cpprelude/memory_context.h>
 #include <cpprelude/platform.h>
-
-#include <ecs/helper_structures/bag.h>
+#include <cpprelude/dynamic_array.h>
+#include <cpprelude/stack_array.h>
 
 namespace ecs
 {
@@ -23,6 +23,7 @@ namespace ecs
 		cpprelude::dynamic_array<cpprelude::isize> _sparse;
 		cpprelude::dynamic_array <cpprelude::isize> _dense_sparse_map;
 		cpprelude::stack_array<cpprelude::usize> _free_indices;
+		cpprelude::u16 stack_limit = 1024;
 
 		sparse_unordered_set(cpprelude::memory_context* context = cpprelude::platform->global_memory)
 			:_dense(context),
@@ -40,7 +41,7 @@ namespace ecs
 			
 			cpprelude::usize place = _sparse.count();
 			
-			if (!_free_indices.empty())
+			if (_free_indices.count() > stack_limit)
 			{
 				place = _free_indices.top();
 				_free_indices.pop();
@@ -61,7 +62,7 @@ namespace ecs
 
 			cpprelude::usize place = _sparse.count();
 
-			if (!_free_indices.empty())
+			if (_free_indices.count() > stack_limit)
 			{
 				place = _free_indices.top();
 				_free_indices.pop();
@@ -82,7 +83,7 @@ namespace ecs
 			
 			cpprelude::usize place = _sparse.count();
 
-			if (!_free_indices.empty())
+			if (_free_indices.count() > stack_limit)
 			{
 				place = _free_indices.top();
 				_free_indices.pop();

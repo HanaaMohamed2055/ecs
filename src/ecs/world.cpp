@@ -8,10 +8,6 @@ namespace ecs
 		cpprelude::u32 id = entity_set.insert(ID());
 		ID& entity_id = entity_set[id];
 		entity_id.number = id;
-
-		if (id >= generation.capacity())
-			generation.reserve(2 * id);
-		generation[id] = ++entity_id.version;
 			
 		return Entity(entity_id, this);
 	}
@@ -20,8 +16,8 @@ namespace ecs
 	World::entity_alive(Entity entity)
 	{
 		return entity.world == this
-			&& entity.id.valid()
-			&& generation[entity.id.number] == entity.id.version;
+			&& entity.id.valid();
+			
 	}
 	
 	/*view<generic_component_iterator>

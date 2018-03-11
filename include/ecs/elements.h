@@ -2,7 +2,6 @@
 #include <cpprelude/defines.h>
 #include <cpprelude/platform.h>
 
-#include <ecs/helper_structures/sparse_unordered_set.h>
 #include <ecs/api.h>
 
 namespace utility
@@ -12,8 +11,8 @@ namespace utility
 
 namespace ecs
 {
-	using _id_type = cpprelude::u32;
-	using _version_type = cpprelude::u8;
+	using _id_type = cpprelude::u64;
+	using _version_type = cpprelude::u32;
 
 	constexpr _id_type INVALID_ID = -1;
 
@@ -22,32 +21,45 @@ namespace ecs
 	struct ID
 	{
 		_id_type number = INVALID_ID;
-		_version_type version = -1;
+		static constexpr auto entity_mask = 0xFFFFFFFFFF;
+		static constexpr auto version_mask = 0xFFFFFF;
+		static constexpr auto entity_bits = 40;
 		
-		ID&
-		operator=(const ID& other)
-		{
-			number = other.number;
-			version = other.version;
-			return *this;
+		bool
+		operator==(const ID& other) const
+ 		{
+			return number == other.number;
 		}
 
 		bool
-		operator==(const ID& other)
-		{
-			return number == other.number && version == other.version;
-		}
-
-		bool
-		operator!=(const ID& other)
+		operator!=(const ID& other) const
 		{
 			return !operator==(other);
 		}
 		
-		bool
-		valid()
+		_id_type
+		id() const
 		{
-			return number != INVALID_ID && version != -1;
+			return number & entity_mask;
+		}
+
+		_version_type
+		version() const
+		{
+			return _version_type((number >> entity_bits) & version_mask);
+		}
+
+		void
+		increment_version()
+		{
+			const cpprelude::u32 new_version = ((number >> entity_bits) + 1) << entity_bits;
+			number = (number & entity_mask) | new_version;
+		}
+
+		bool
+		valid() const
+		{
+			return number != INVALID_ID;
 		}
 	};
 
@@ -69,19 +81,6 @@ namespace ecs
 		void* data = nullptr;
 		ID entity_id;
 		World* world;		
-	};
-
-	struct component_type_entry
-	{
-		utility::base_type_utils* utils = nullptr;
-		cpprelude::memory_context* _context = nullptr;
-		
-		// bool indicates whether it was dynamically allocated or not
-		sparse_unordered_set<std::pair<Component, bool>> component_set;
-
-		component_type_entry(cpprelude::memory_context* context)
-			:_context(context),
-			component_set(_context)
-		{}
+		bool dynamically_allocated;
 	};
 }

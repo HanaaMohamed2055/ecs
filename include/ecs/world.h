@@ -10,6 +10,18 @@
 
 namespace ecs
 {	
+	struct component_type_entry
+	{
+		utility::base_type_utils* utils = nullptr;
+		cpprelude::memory_context* _context = nullptr;
+
+		sparse_unordered_set<Component> component_set;
+
+		component_type_entry(cpprelude::memory_context* context)
+			:component_set(context)
+		{}
+	};
+
 	struct World
 	{
 		using entity_components = cpprelude::dynamic_array<cpprelude::dynamic_array<std::pair<cpprelude::usize, cpprelude::usize>>>;
@@ -17,19 +29,14 @@ namespace ecs
 		sparse_unordered_set<ID> entity_set;
 		cpprelude::dynamic_array<component_type_entry> component_types;
 		entity_components ledger;
-		cpprelude::dynamic_array<_version_type> generation;
 		cpprelude::memory_context* _context;
 	
 		World(cpprelude::memory_context* context = cpprelude::platform->global_memory)
 			:_context(context),
 			ledger(context),
 			entity_set(context),
-			component_types(context),
-			generation(context)
-		{
-			ledger.expand_back(RESERVED, _context);
-			generation.reserve(RESERVED);
-		}
+			component_types(context)
+		{}
 				
 		API_ECS Entity
 		create_entity();
@@ -62,7 +69,6 @@ namespace ecs
 
 			if (entity_alive(e))
 			{
-			
 				cpprelude::usize type = utility::get_type_number<T>();
 				if (type == component_types.count())
 				{
@@ -78,9 +84,10 @@ namespace ecs
 				component.world = this;
 				new (component.data) T(value);
 				component.entity_id = e.id;
+				component.dynamically_allocated = true;
 
 				// registering component with the world and the entity 
-				cpprelude::usize component_index = components_entry.component_set.insert(std::make_pair(component, true));
+				cpprelude::usize component_index = components_entry.component_set.insert(component);
 								
 				if (e.id.number >= ledger.capacity())
 					ledger.expand_back(2 * e.id.number, _context);

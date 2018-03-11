@@ -45,8 +45,17 @@ create_entt_entities(workbench* bench, usize limit)
 	entt::DefaultRegistry registry;
 	bench->watch.start();
 
-	for (usize i = 0; i < limit; ++i)
-		registry.create();
+	//for (usize i = 0; i < limit; ++i)
+	auto ent1 = registry.create();
+	auto ent2 = registry.create();
+	auto ent3 = registry.create();
+	auto ent4 = registry.create();
+	auto ent5 = registry.create();
+	auto ent6 = registry.create();
+	registry.destroy(ent3);
+	registry.destroy(ent5);
+	registry.create();
+	registry.create();
 
 	bench->watch.stop();
 }
@@ -106,6 +115,9 @@ create_entt_small_entities(workbench* bench, usize limit)
 
 	for (usize i = 0; i < limit; ++i)
 		registry.create<Position>();
+
+	if (registry.has<Position>(1))
+		std::cout << "stop here\n";
 
 	bench->watch.stop();
 }
@@ -185,7 +197,7 @@ create_entt_small_entities(workbench* bench, usize limit)
 void
 benchmark()
 {
-	usize limit = 10000;
+	usize limit = 10;
 
 	compare_benchmark(std::cout, {
 	CPPRELUDE_BENCHMARK(create_entt_entities, limit),

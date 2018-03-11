@@ -6,6 +6,8 @@
 #include <cpprelude/dynamic_array.h>
 #include <cpprelude/stack_array.h>
 
+#include <ecs/elements.h>
+
 namespace ecs
 {
 	
@@ -178,6 +180,149 @@ namespace ecs
 		}
 
 		// iterators for range-based loops
+		const_iterator
+		begin() const
+		{
+			return _dense.begin();
+		}
+
+		iterator
+		begin()
+		{
+			return _dense.begin();
+		}
+
+		const_iterator
+		cbegin() const
+		{
+			return _dense.cbegin();
+		}
+
+		const_iterator
+		end() const
+		{
+			return _dense.end();
+		}
+
+		iterator
+		end()
+		{
+			return _dense.end();
+		}
+
+		const_iterator
+		cend()
+		{
+			return _dense.end();
+		}
+
+		~sparse_unordered_set()
+		{}
+	};
+
+	template<>
+	struct sparse_unordered_set<Entity>
+	{
+		using iterator = cpprelude::sequential_iterator<ID>;
+		using const_iterator = cpprelude::sequential_iterator<const ID>;
+
+		cpprelude::dynamic_array<ID> _dense;
+		cpprelude::dynamic_array<ID> _sparse;
+		cpprelude::usize recycle_count = 0;
+		ID next;
+
+		sparse_unordered_set(cpprelude::memory_context* context = cpprelude::platform->global_memory)
+			:_dense(context),
+			_sparse(context)
+		{}
+
+		cpprelude::usize
+		insert_one_more()
+		{
+			if (recycle_count)
+			{
+				// here we will implement the recycling part
+				_dense.insert_back(next);
+				next = _sparse[next.id()];
+				_sparse[_dense.back()->id()] = ID{ _dense.count() - 1 };
+				--recycle_count;
+			}
+			else
+			{
+				_dense.insert_back(ID{ _dense.count() });
+				_sparse.insert_back(ID{ _dense.count() - 1 });
+				return _sparse.count() - 1;
+			}
+		}
+
+		bool
+		has(cpprelude::usize sparse_index)
+		{
+			return _sparse[sparse_index].id() < _dense.count()
+				&& _dense[_sparse[sparse_index].id()].id() == sparse_index;
+		}
+
+		void
+		remove(cpprelude::usize sparse_index)
+		{
+			cpprelude::usize dense_index = _sparse[sparse_index].id();
+
+			std::swap(_dense[dense_index], _dense[_dense.count() - 1]);
+			_sparse[_dense[dense_index].id()] = ID{dense_index};
+			_dense.remove_back();
+
+			ID temp = next;
+			next = _sparse[sparse_index];
+			next.increment_version();
+			if (recycle_count)
+				_sparse[sparse_index] = temp;
+					
+			++recycle_count;
+		}
+
+		ID&
+		operator[](cpprelude::usize sparse_index)
+		{
+			return _dense[_sparse[sparse_index].id()];
+		}
+
+		const ID&
+		operator[](cpprelude::usize sparse_index) const
+		{
+			return _dense[_sparse[sparse_index].id()];
+		}
+
+		cpprelude::usize
+		count() const
+		{
+			return _dense.count();
+		}
+
+		cpprelude::usize
+		sparse_count() const
+ 		{
+			return _sparse.count();
+		}
+
+		bool
+		empty() const
+		{
+			return _dense.count() == 0;
+		}
+
+		cpprelude::usize
+		capacity() const
+		{
+			return _dense.capacity();
+		}
+
+		void
+		reserve(cpprelude::usize expected_size)
+		{
+			_dense.reserve(expected_size);
+			_sparse.reserve(expected_size);
+		}
+
 		const_iterator
 		begin() const
 		{

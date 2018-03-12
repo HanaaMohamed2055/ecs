@@ -220,6 +220,7 @@ namespace ecs
 		{}
 	};
 
+	// this specialization is intended for use inside this entity-component system
 	template<>
 	struct sparse_unordered_set<Entity>
 	{
@@ -236,16 +237,18 @@ namespace ecs
 			_sparse(context)
 		{}
 
-		cpprelude::usize
+		ID
 		insert_one_more()
 		{
 			if (recycle_count)
 			{
 				// here we will implement the recycling part
 				_dense.insert_back(next);
+				auto entity_id = next;
 				next = _sparse[next.id()];
-				_sparse[_dense.back()->id()] = ID{ _dense.count() - 1 };
+				_sparse[entity_id.id()] = ID(_dense.count() - 1, entity_id.version());
 				--recycle_count;
+				return entity_id;
 			}
 			else
 			{
@@ -260,6 +263,12 @@ namespace ecs
 		{
 			return _sparse[sparse_index].id() < _dense.count()
 				&& _dense[_sparse[sparse_index].id()].id() == sparse_index;
+		}
+
+		bool
+		has(Entity entity)
+		{
+			return _sparse[entity.id()].version() == entity.version() && _sparse[entity.id()].id() < _dense.count();
 		}
 
 		void

@@ -26,7 +26,7 @@ namespace ecs
 	{
 		using entity_components = cpprelude::dynamic_array<cpprelude::dynamic_array<std::pair<cpprelude::usize, cpprelude::usize>>>;
 
-		sparse_unordered_set<ID> entity_set;
+		sparse_unordered_set<Entity> entity_set;
 		cpprelude::dynamic_array<component_type_entry> component_types;
 		entity_components ledger;
 		cpprelude::memory_context* _context;
@@ -45,15 +45,8 @@ namespace ecs
 		void
 		add_entity(T& entity)
 		{
-			cpprelude::u32 id = entity_set.insert(ID());
-			ID& entity_id = entity_set[id];
-			entity_id.number = id;
-
-			if (id >= generation.capacity())
-				generation.reserve(2 * id);
-			generation[id] = ++entity_id.version;
-			
-			entity.id = entity_id;
+			auto entity_id = entity_set.insert_one_more();
+			entity.entity_id = entity_id;
 			entity.world = this;
 		}
 
@@ -64,37 +57,37 @@ namespace ecs
 		T&
 		add_property(Entity e, const T& value, cpprelude::memory_context* context = nullptr)
 		{
-			if (!context)
-				context = _context;
+			//if (!context)
+			//	context = _context;
 
-			if (entity_alive(e))
-			{
-				cpprelude::usize type = utility::get_type_number<T>();
-				if (type == component_types.count())
-				{
-					component_types.insert_back(component_type_entry(context));
-					component_types[type].utils = utility::get_type_utils<T>();
-				}
-				
-				auto& components_entry = component_types[type];
-								
-				// constructing component itself
-				ecs::Component component;
-				component.data = components_entry._context->alloc<T>();
-				component.world = this;
-				new (component.data) T(value);
-				component.entity_id = e.id;
-				component.dynamically_allocated = true;
+			//if (entity_alive(e))
+			//{
+			//	cpprelude::usize type = utility::get_type_number<T>();
+			//	if (type == component_types.count())
+			//	{
+			//		component_types.insert_back(component_type_entry(context));
+			//		component_types[type].utils = utility::get_type_utils<T>();
+			//	}
+			//	
+			//	auto& components_entry = component_types[type];
+			//					
+			//	// constructing component itself
+			//	ecs::Component component;
+			//	component.data = components_entry._context->alloc<T>();
+			//	component.world = this;
+			//	new (component.data) T(value);
+			//	component.entity_id = e.id;
+			//	component.dynamically_allocated = true;
 
-				// registering component with the world and the entity 
-				cpprelude::usize component_index = components_entry.component_set.insert(component);
-								
-				if (e.id.number >= ledger.capacity())
-					ledger.expand_back(2 * e.id.number, _context);
+			//	// registering component with the world and the entity 
+			//	cpprelude::usize component_index = components_entry.component_set.insert(component);
+			//					
+			//	if (e.id.number >= ledger.capacity())
+			//		ledger.expand_back(2 * e.id.number, _context);
 
-				ledger[e.id.number].insert_back(std::make_pair(component_index, type));
+			//	ledger[e.id.number].insert_back(std::make_pair(component_index, type));
 
-				return *(static_cast<T*>(component.data));
+			//	return *(static_cast<T*>(component.data));
 			}
 		}
 

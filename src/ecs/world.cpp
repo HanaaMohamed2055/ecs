@@ -5,19 +5,13 @@ namespace ecs
 	Entity
 	World::create_entity()
 	{
-		cpprelude::u32 id = entity_set.insert(ID());
-		ID& entity_id = entity_set[id];
-		entity_id.number = id;
-			
-		return Entity(entity_id, this);
+		return Entity(entity_set.insert_one_more(), this);
 	}
 	
 	bool
 	World::entity_alive(Entity entity)
 	{
-		return entity.world == this
-			&& entity.id.valid();
-			
+		return entity.world == this && entity_set.has(entity);
 	}
 	
 	/*view<generic_component_iterator>

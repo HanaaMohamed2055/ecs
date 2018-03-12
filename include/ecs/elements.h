@@ -25,6 +25,14 @@ namespace ecs
 		static constexpr auto version_mask = 0xFFFFFF;
 		static constexpr auto entity_bits = 40;
 		
+		ID()
+		{}
+
+		ID(cpprelude::u64 entity_id, cpprelude::u64 version = 0)
+		{
+			number = (entity_id & entity_mask) | ((version & version_mask) << 40);
+		}
+
 		bool
 		operator==(const ID& other) const
  		{
@@ -52,7 +60,7 @@ namespace ecs
 		void
 		increment_version()
 		{
-			const cpprelude::u32 new_version = ((number >> entity_bits) + 1) << entity_bits;
+			const cpprelude::u64 new_version = ((number >> entity_bits) + 1) << entity_bits;
 			number = (number & entity_mask) | new_version;
 		}
 
@@ -65,15 +73,27 @@ namespace ecs
 
 	struct Entity
 	{
-		ID id;
+		ID entity_id;
 		World* world = nullptr;
 
 		Entity()
 		{}
 
 		Entity(ID entity_id, World* entity_world)
-			:id(entity_id), world(entity_world)
+			:entity_id(entity_id), world(entity_world)
 		{}
+
+		_id_type
+		id()
+		{
+			return entity_id.id();
+		}
+
+		_version_type
+		version()
+		{
+			return entity_id.version();
+		}
 	};
 
 	struct Component

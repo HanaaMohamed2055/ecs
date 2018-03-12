@@ -73,7 +73,7 @@ namespace ecs
 
 	struct Entity
 	{
-		ID entity_id;
+		const ID entity_id;
 		World* world = nullptr;
 
 		Entity()
@@ -84,23 +84,44 @@ namespace ecs
 		{}
 
 		_id_type
-		id()
+		id() const
 		{
 			return entity_id.id();
 		}
 
 		_version_type
-		version()
+		version() const
 		{
 			return entity_id.version();
 		}
 	};
 
-	struct Component
+	struct Internal_Component
 	{
 		void* data = nullptr;
 		ID entity_id;
-		World* world;		
-		bool dynamically_allocated;
+		// this one will help differentiate between components 
+		// of the same type for the same entity
+		cpprelude::usize id;
+		bool dynamically_allocated = false;
+	};
+
+	struct Component
+	{
+		void* _data = nullptr;
+		ID _entity_id;
+		World* _world;	
+		cpprelude::usize _id;
+
+		Component()
+		{}
+
+		Component(void* data, ID entity_id, World* world, cpprelude::usize id)
+			:_data(data), _entity_id(entity_id), _world(world), _id(id)
+		{}
+
+		Component(const Internal_Component& c, World* world)
+			:_data(c.data), _entity_id(c.entity_id), _id(c.id), _world(world)
+		{}
 	};
 }

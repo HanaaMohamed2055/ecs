@@ -15,10 +15,11 @@ namespace ecs
 		utility::base_type_utils* utils = nullptr;
 		cpprelude::memory_context* _context = nullptr;
 
-		sparse_unordered_set<Component> component_set;
+		sparse_unordered_set<Internal_Component> components;
 
 		component_type_entry(cpprelude::memory_context* context)
-			:component_set(context)
+			:_context(context),
+			components(context)
 		{}
 	};
 
@@ -57,37 +58,40 @@ namespace ecs
 		T&
 		add_property(Entity e, const T& value, cpprelude::memory_context* context = nullptr)
 		{
-			//if (!context)
-			//	context = _context;
+			if (!context)
+				context = _context;
 
-			//if (entity_alive(e))
-			//{
-			//	cpprelude::usize type = utility::get_type_number<T>();
-			//	if (type == component_types.count())
-			//	{
-			//		component_types.insert_back(component_type_entry(context));
-			//		component_types[type].utils = utility::get_type_utils<T>();
-			//	}
-			//	
-			//	auto& components_entry = component_types[type];
-			//					
-			//	// constructing component itself
-			//	ecs::Component component;
-			//	component.data = components_entry._context->alloc<T>();
-			//	component.world = this;
-			//	new (component.data) T(value);
-			//	component.entity_id = e.id;
-			//	component.dynamically_allocated = true;
+			if (entity_alive(e))
+			{
+				cpprelude::usize type = utility::get_type_identifier<T>();
+				
+				// prealllocation at the beginning
+				if (type == component_types.count())
+				{
+					component_types.insert_back(component_type_entry(context));
+					component_types[type].utils = utility::get_type_utils<T>();
+				}
+				
+				if (e.id() >= ledger.capacity())
+					ledger.expand_back(e.id() + 1, _context);
 
-			//	// registering component with the world and the entity 
-			//	cpprelude::usize component_index = components_entry.component_set.insert(component);
-			//					
-			//	if (e.id.number >= ledger.capacity())
-			//		ledger.expand_back(2 * e.id.number, _context);
+				
+				auto& components_entry = component_types[type];
+								
+				// constructing component itself
+				Internal_Component component;
+				component.data = components_entry._context->alloc<T>();
+				new (component.data) T(value);
+				component.entity_id = e.id();
+				component.dynamically_allocated = true;
+				component.id = ledger[e.id()].count();
 
-			//	ledger[e.id.number].insert_back(std::make_pair(component_index, type));
+				// registering component with the world and the entity 
+				components_entry.components.insert(component);
+								
+				//ledger[e.id()].insert_back(std::make_pair(, type));
 
-			//	return *(static_cast<T*>(component.data));
+				return *(static_cast<T*>(component.data));
 			}
 		}
 

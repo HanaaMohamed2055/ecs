@@ -21,6 +21,7 @@ namespace ecs
 			:_context(context),
 			components(context)
 		{}
+
 	};
 
 	struct World
@@ -171,50 +172,29 @@ namespace ecs
 
 			for (auto component : pool.components)
 			{
-				if (component.entity_id == entity_id)
+				if (component.first.entity_id == entity_id)
 					return true;
 			}
 
 			return false;
 		}
 				
-		/*template<typename T>
+		template<typename T>
 		void
 		remove_property(Entity e)
 		{
-			if (e.id == INVALID_ID || e.world != this)
+			if (!entity_alive(e))
 				return;
 
-			const char* type = utility::get_type_name<T>();
-				
-			auto& entity_components = ledger[e.id];
-			auto& typed_components = type_table[type];
-			cpprelude::isize last_index = entity_components.count() > 0 ? entity_components.count() - 1: -2;
+			auto type = utility::get_type_identifier<T>();
+			component_pool& pool = component_types[type];
+			auto entity_id = e.id();
+
 			
-			for (cpprelude::isize i = 0; i <= last_index; ++i)
-			{
-				auto index = entity_components[i];
-				auto& component = component_set[index];
-					
-				if (component.utils->type != type)
-					continue;
-
-				auto itr = std::find(typed_components.begin(), typed_components.end(), index);
-				std::swap(typed_components[typed_components.count() - 1], *itr);
-				typed_components.remove_back();
-
-				if(component.dynamically_allocated)
-					component.utils->free(component.data, _context);
-				
-				component_set.remove(index);
-
-				std::swap(entity_components[i], entity_components[last_index--]);
-			}
-
-			if(last_index > -2)
-				entity_components.remove_back(entity_components.count() - last_index - 1);
 		}
+		
 
+		/*
 		template<typename T>
 		T& 
 		get(Entity e)

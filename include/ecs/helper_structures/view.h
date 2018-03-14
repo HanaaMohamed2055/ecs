@@ -9,7 +9,7 @@ namespace ecs
 {
 	struct generic_component_iterator
 	{
-		using iterator_category = std::forward_iterator_tag;
+		/*using iterator_category = std::forward_iterator_tag;
 		using value_type = Internal_Component;
 		using difference_type = cpprelude::isize;
 		using pointer = Internal_Component*;
@@ -88,14 +88,14 @@ namespace ecs
 		operator->()
 		{
 			return component_set->_dense.data() + component_set->_sparse[*_index_it];
-		}
+		}*/
 	};
 
 	
 	template<typename T>
 	struct component_iterator
 	{
-		using iterator_category = std::forward_iterator_tag;
+	/*	using iterator_category = std::forward_iterator_tag;
 		using value_type = T;
 		using difference_type = cpprelude::isize;
 		using pointer = T*;
@@ -237,6 +237,6 @@ namespace ecs
 		end()
 		{
 			return _end_it;
-		}
+		}*/
 	};
 }

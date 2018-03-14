@@ -6,18 +6,18 @@
 #include <ecs/api.h>
 #include <ecs/utility.h>
 
-#define RESERVED 64
+#define PREALLOCATED 1024
 
 namespace ecs
 {	
-	struct component_type_entry
+	struct component_pool
 	{
 		utility::base_type_utils* utils = nullptr;
 		cpprelude::memory_context* _context = nullptr;
-
+		
 		sparse_unordered_set<Internal_Component> components;
 
-		component_type_entry(cpprelude::memory_context* context)
+		component_pool(cpprelude::memory_context* context)
 			:_context(context),
 			components(context)
 		{}
@@ -25,16 +25,14 @@ namespace ecs
 
 	struct World
 	{
-		using entity_components = cpprelude::dynamic_array<cpprelude::dynamic_array<std::pair<cpprelude::usize, cpprelude::usize>>>;
+		using entity_components = cpprelude::dynamic_array<cpprelude::dynamic_array <std::pair<cpprelude::usize, cpprelude::usize>>> ;
 
 		sparse_unordered_set<Entity> entity_set;
-		cpprelude::dynamic_array<component_type_entry> component_types;
-		entity_components ledger;
+		cpprelude::dynamic_array<component_pool> component_types;
 		cpprelude::memory_context* _context;
 	
 		World(cpprelude::memory_context* context = cpprelude::platform->global_memory)
 			:_context(context),
-			ledger(context),
 			entity_set(context),
 			component_types(context)
 		{}
@@ -54,104 +52,109 @@ namespace ecs
 		API_ECS bool
 		entity_alive(Entity entity);
 		
-		template<typename T>
+		template<typename T, typename ... TArgs>
 		T&
-		add_property(Entity e, const T& value, cpprelude::memory_context* context = nullptr)
+		add_property(Entity e, TArgs&& ... args)
 		{
-			if (!context)
-				context = _context;
+			return add_property(e, _context, std::forward<TArgs>(args)...);
+		}
 
+		template<typename T, typename ... TArgs>
+		T&
+		add_property(Entity e, cpprelude::memory_context* context, TArgs&& ... args)
+		{
 			if (entity_alive(e))
 			{
 				cpprelude::usize type = utility::get_type_identifier<T>();
-				
+
 				// prealllocation at the beginning
-				if (type == component_types.count())
+				if (type >= component_types.count())
 				{
-					component_types.insert_back(component_type_entry(context));
+					component_types.insert_back(component_pool(_context));
 					component_types[type].utils = utility::get_type_utils<T>();
 				}
-				
-				if (e.id() >= ledger.capacity())
-					ledger.expand_back(e.id() + 1, _context);
 
-				
-				auto& components_entry = component_types[type];
-								
+				auto& pool = component_types[type];
+
 				// constructing component itself
 				Internal_Component component;
-				component.data = components_entry._context->alloc<T>();
+				component.data = pool._context->alloc<T>();
+				new (component.data) T(std::forward<TArgs>(args)...);
+				component.entity_id = e.id();
+				component.dynamically_allocated = true;
+			
+				// registering component with the world and the entity 
+				cpprelude::usize component_index = pool.components.insert(component);
+				
+				return *(static_cast<T*>(component.data));
+			}
+		}
+				
+		template<typename T>
+		T&
+		add_property(Entity e, const T& value)
+		{
+			return add_property(e, _context, value);
+		}
+		
+		template<typename T>
+		T&
+		add_property(Entity e, cpprelude::memory_context* context, const T& value)
+		{
+			if (entity_alive(e))
+			{
+				cpprelude::usize type = utility::get_type_identifier<T>();
+
+				// prealllocation at the beginning
+				if (type >= component_types.count())
+				{
+					component_types.insert_back(component_pool(context));
+					component_types[type].utils = utility::get_type_utils<T>();
+				}
+
+				auto& pool = component_types[type];
+
+				// constructing component itself
+				Internal_Component component;
+				component.data = pool._context->alloc<T>();
 				new (component.data) T(value);
 				component.entity_id = e.id();
 				component.dynamically_allocated = true;
-				component.id = ledger[e.id()].count();
 
 				// registering component with the world and the entity 
-				components_entry.components.insert(component);
-								
-				//ledger[e.id()].insert_back(std::make_pair(, type));
+				cpprelude::usize component_index = pool.components.insert(component);
 
 				return *(static_cast<T*>(component.data));
 			}
 		}
-
-		//template<typename T>
-		//T&
-		//add_property(Entity e, T&& value)
-		//{
-		//	if (e.id != INVALID_ID && e.world == this)
-		//	{
-		//		ecs::Component component;
-		//		component.utils = utility::get_type_utils<T>();
-		//		component.data = _context->alloc<T>();
-		//		new (component.data) T(std::move(value));
-		//		component.dynamically_allocated = true;
-		//		component.entity = &(entity_set.[e.id]);
-
-		//		cpprelude::usize component_index = component_set.insert(component);
-		//		ledger[e.id].insert_back(component_index);
-		//		type_table[component.utils->type].insert_back(component_index);
-
-		//		return *(static_cast<T*>(component.data));
-		//	}
-		//}
-
-		//template<typename T, typename ... TArgs>
-		//T&
-		//add_property(Entity e, TArgs&& ... args)
-		//{
-		//	if (entity_alive(e))
-		//	{
-		//		ecs::Component component;
-		//		component.utils = utility::get_type_utils<T>();
-		//		component.data = _context->alloc<T>();
-		//		new (component.data) T(std::forward<TArgs>(args)...);
-		//		component.dynamically_allocated = true;
-		//		component.entity = &(entity_set[e.id]);
-
-		//		cpprelude::usize component_index = component_set.insert(component);
-		//		ledger[e.id].insert_back(component_index);
-		//		type_table[component.utils->type].insert_back(component_index);
-
-		//		return *(static_cast<T*>(component.data));
-		//	}
-		//}
-
+		
 		template<typename T>
 		void
 		add_property(Entity e, T* data)
 		{
-			if (e.id != INVALID_ID && e.world == this)
+			if (entity_alive(e))
 			{
-				ecs::Component component;
-				component.data = data;
-				component.utils = utility::get_type_utils<T>();
-				component.entity_id = e.id;
-				component.entity = &(entity_set[e.id]);
+				cpprelude::usize type = utility::get_type_identifier<T>();
 
-				cpprelude::usize component_index = component_set.insert(component);
-				ledger[e.id].insert_back(component_index);
-				type_table[component.utils->type].insert_back(component_index);
+				// prealllocation at the beginning
+				if (type >= component_types.count())
+				{
+					component_types.insert_back(component_pool(_context));
+					component_types[type].utils = utility::get_type_utils<T>();
+				}
+
+				auto& pool = component_types[type];
+
+				// constructing component itself/////
+				Internal_Component component;
+				component.data = data;
+				component.entity_id = e.id();
+				component.dynamically_allocated = true;
+
+				// registering component with the world and the entity 
+				cpprelude::usize component_index = pool.components.insert(component);
+
+				return *(static_cast<T*>(component.data));
 			}
 		}
 				
@@ -159,22 +162,23 @@ namespace ecs
 		bool
 		has(Entity e)
 		{
-			if (e.id != INVALID_ID && e.world == this)
-			{
-				const char* type = utility::get_type_name<T>();
-				auto& components = ledger[e.id];
+			if (!entity_alive(e))
+				return false;
 
-				for (auto index: components)
-				{
-					if (component_set[index].utils->type == type)
-						return true;
-				}
+			auto type = utility::get_type_identifier<T>();
+			component_pool& pool = component_types[type];
+			auto entity_id = e.id();
+
+			for (auto component : pool.components)
+			{
+				if (component.entity_id == entity_id)
+					return true;
 			}
 
 			return false;
 		}
 				
-		template<typename T>
+		/*template<typename T>
 		void
 		remove_property(Entity e)
 		{
@@ -258,7 +262,7 @@ namespace ecs
 			component_iterator<T> end(&component_set, components.end(), type, 0);
 
 			return view<component_iterator<T>>(begin, end);
-		}
+		}*/
 
 		//API_ECS view<generic_component_iterator>
 		//get_all_entity_properties(Entity e);
@@ -268,9 +272,9 @@ namespace ecs
 		//		
 		//API_ECS sparse_unordered_set<Entity>&
 		//get_all_world_entities();
-		//				
-		//API_ECS void
-		//kill_entity(Entity& e);
+						
+		API_ECS void
+		kill_entity(Entity e);
 
 		//API_ECS void
 		//clean_up();

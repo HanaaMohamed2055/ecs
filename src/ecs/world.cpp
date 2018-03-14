@@ -40,14 +40,14 @@ namespace ecs
 		return entity_set;
 	}*/
 
-	//void
-	//World::kill_entity(Entity& e)
-	//{
-	//	if (e.id == INVALID_ID || e.world != this)
-	//		return;
+	void
+	World::kill_entity(Entity e)
+	{
+		if (!entity_alive(e))
+			return;
 
-	//	// remove the entity
-	//	entity_set.remove(e.id);
+		// remove the entity
+		entity_set.remove(e.id());
 
 	//	// remove the entity components
 	//	auto entity_components = ledger[e.id];
@@ -67,10 +67,7 @@ namespace ecs
 	//	}
 	//	ledger.remove(e.id);
 
-	//	// invalidate the entity
-	//	e.id = INVALID_ID;
-	//	e.world == nullptr;
-	//}
+	}
 
 	//void
 	//World::clean_up()

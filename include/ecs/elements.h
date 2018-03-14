@@ -73,7 +73,7 @@ namespace ecs
 
 	struct Entity
 	{
-		const ID entity_id;
+		ID entity_id;
 		World* world = nullptr;
 
 		Entity()
@@ -99,29 +99,27 @@ namespace ecs
 	struct Internal_Component
 	{
 		void* data = nullptr;
-		ID entity_id;
-		// this one will help differentiate between components 
-		// of the same type for the same entity
-		cpprelude::usize id;
+		_id_type entity_id;
 		bool dynamically_allocated = false;
 	};
 
+	// still I am not so sure I will be using this or not
+	template<typename T>
 	struct Component
 	{
-		void* _data = nullptr;
-		ID _entity_id;
+		T* _data = nullptr;
+		_id_type _entity_id;
 		World* _world;	
-		cpprelude::usize _id;
-
+		
 		Component()
 		{}
 
-		Component(void* data, ID entity_id, World* world, cpprelude::usize id)
-			:_data(data), _entity_id(entity_id), _world(world), _id(id)
+		Component(void* data, _id_type eid, World* world)
+			:_data(data), _entity_id(eid), _world(world)
 		{}
 
 		Component(const Internal_Component& c, World* world)
-			:_data(c.data), _entity_id(c.entity_id), _id(c.id), _world(world)
+			:_data(c.data), _entity_id(c.entity_id), _world(world)
 		{}
 	};
 }

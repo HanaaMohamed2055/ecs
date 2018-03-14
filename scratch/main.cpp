@@ -7,31 +7,15 @@
 
 int main()
 {
-	benchmark();
-	//ecs::sparse_unordered_set<ecs::Entity> entity_set;
+	//benchmark();
+	
+	ecs::World world;
+	auto entity = world.create_entity();
+	world.add_property<u32>(entity, (u32)392);
+	world.add_property<r32>(entity, (r32)823.28);
+	world.add_property<r64>(entity, (r64)1029.8888888);
 
-	//entity_set.insert_one_more();
-	//entity_set.insert_one_more();
-	//entity_set.insert_one_more();
-	//entity_set.insert_one_more();
-	//entity_set.insert_one_more();
-	//entity_set.remove(2);
-	//entity_set.remove(3);
-	//entity_set.insert_one_more();
-	//entity_set.insert_one_more();
-	//entity_set.insert_one_more();
-	//entity_set.remove(3);
-	//entity_set.insert_one_more();
-	//for (auto entity : entity_set)
-	//	std::cout << entity.id() << " " << entity.version() << std::endl;
-	//entity_set.remove(2);
-	//std::cout << entity_set.has(2) << std::endl;
-	//std::cout << entity_set.has(3) << std::endl;
-	//std::cout << sizeof(ecs::Internal_Component) << std::endl;
-	//std::cout << sizeof(ecs::ID) << std::endl;
-
-	//ecs::World w;
-	//auto e = w.create_entity();
-	//u32 x = 23902;
-	//w.add_property<u32>(e, x);
+	std::cout << world.has<u32>(entity) << std::endl;
+	std::cout << world.has<r32>(entity) << std::endl;
+	std::cout << world.has<char>(entity) << std::endl;
 }

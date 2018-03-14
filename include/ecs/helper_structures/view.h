@@ -10,20 +10,20 @@ namespace ecs
 	struct generic_component_iterator
 	{
 		using iterator_category = std::forward_iterator_tag;
-		using value_type = Component;
+		using value_type = Internal_Component;
 		using difference_type = cpprelude::isize;
-		using pointer = Component*;
-		using reference = Component&;
-		using data_type = Component;
+		using pointer = Internal_Component*;
+		using reference = Internal_Component&;
+		using data_type = Internal_Component;
 
-		sparse_unordered_set<Component>* component_set;
+		sparse_unordered_set<Internal_Component>* component_set;
 		cpprelude::sequential_iterator<cpprelude::usize> _index_it;
 
 		generic_component_iterator()
 			:component_set(nullptr), _index_it(nullptr)
 		{}
 
-		generic_component_iterator(sparse_unordered_set<Component>* set, const cpprelude::sequential_iterator<cpprelude::usize>& index_it)
+		generic_component_iterator(sparse_unordered_set<Internal_Component>* set, const cpprelude::sequential_iterator<cpprelude::usize>& index_it)
 			:component_set(set), _index_it(index_it)
 		{}
 
@@ -102,7 +102,7 @@ namespace ecs
 		using reference = T&;
 		using data_type = T;
 
-		sparse_unordered_set<Component>* component_set;
+		sparse_unordered_set<Internal_Component>* component_set;
 		cpprelude::sequential_iterator<cpprelude::usize> _index_it;
 		const char* _type;
 		cpprelude::usize _size = 0;
@@ -111,7 +111,7 @@ namespace ecs
 			:component_set(nullptr), _index_it(nullptr), _size(0)
 		{}
 
-		component_iterator(sparse_unordered_set<Component>* set, cpprelude::sequential_iterator<cpprelude::usize> index_it, const char* type, cpprelude::usize size)
+		component_iterator(sparse_unordered_set<Internal_Component>* set, cpprelude::sequential_iterator<cpprelude::usize> index_it, const char* type, cpprelude::usize size)
 			:component_set(set), _index_it(index_it), _type(type), _size(size)
 		{
 			while (_size > 0 && component_set->at(*_index_it).utils->type != _type)

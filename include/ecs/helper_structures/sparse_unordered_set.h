@@ -33,8 +33,7 @@ namespace ecs
 			_dense_sparse_map(context),
 			_free_indices(context)
 		{}
-
-						
+								
 		template<typename ... TArgs>
 		cpprelude::usize
 		emplace(TArgs&& ... args)

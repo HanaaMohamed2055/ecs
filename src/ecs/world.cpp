@@ -28,11 +28,11 @@ namespace ecs
 		return view<generic_component_iterator>();
 	}*/
 
-	/*sparse_unordered_set<Component>&
+	generic_component_view
 	World::get_all_world_components()
 	{
-		return component_set;
-	}*/
+		return generic_component_view(component_types);
+	}
 
 	sparse_unordered_set<Entity>&
 	World::get_all_world_entities()

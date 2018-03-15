@@ -5,25 +5,12 @@
 #include <ecs/helper_structures/view.h>
 #include <ecs/api.h>
 #include <ecs/utility.h>
+#include <ecs/helper_structures/sparse_unordered_set.h>
 
 #define PREALLOCATED 1024
 
 namespace ecs
 {	
-	struct component_pool
-	{
-		utility::base_type_utils* utils = nullptr;
-		cpprelude::memory_context* _context = nullptr;
-		
-		sparse_unordered_set<Internal_Component> components;
-
-		component_pool(cpprelude::memory_context* context)
-			:_context(context),
-			components(context)
-		{}
-
-	};
-
 	struct World
 	{
 		using entity_components = cpprelude::dynamic_array<cpprelude::dynamic_array <std::pair<cpprelude::usize, cpprelude::usize>>> ;
@@ -203,25 +190,30 @@ namespace ecs
 			return *((T*)pool[e.id()].data);
 		}
 
-		/*template<typename T>
-		view<component_iterator<T>>
+		template<typename T>
+		component_view<T>
 		get_world_components()
 		{
-			const char* type = utility::get_type_name<T>();
-			auto& components = type_table[type];
+			cpprelude::usize type = utility::get_type_identifier<T>();
+			
+			// if it does not exist, create it
+			if (type >= component_types.count())
+			{
+				component_types.insert_back(component_pool(_context));
+				component_types[type].utils = utility::get_type_utils<T>();
+			}
 
-			component_iterator<T> begin(&component_set, components.begin(), type, components.count());
-			component_iterator<T> end(&component_set, components.end(), type, 0);
+			auto& components = component_types[type].components;
 
-			return view<component_iterator<T>>(begin, end);
-		}*/
+			return component_view<T>(components);
+		}
 
 		//API_ECS view<generic_component_iterator>
 		//get_all_entity_properties(Entity e);
-		//
-		//API_ECS sparse_unordered_set<Component>&
-		//get_all_world_components();
-		//		
+		
+		API_ECS generic_component_view
+		get_all_world_components();
+				
 		API_ECS sparse_unordered_set<Entity>&
 		get_all_world_entities();
 						

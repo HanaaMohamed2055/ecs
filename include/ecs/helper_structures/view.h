@@ -9,32 +9,64 @@ namespace ecs
 {
 	struct generic_component_iterator
 	{
-		/*using iterator_category = std::forward_iterator_tag;
+		using component_iterator = cpprelude::sequential_iterator<std::pair<Internal_Component, cpprelude::usize>>;
+		
+		using iterator_category = std::forward_iterator_tag;
 		using value_type = Internal_Component;
 		using difference_type = cpprelude::isize;
 		using pointer = Internal_Component*;
 		using reference = Internal_Component&;
 		using data_type = Internal_Component;
 
-		sparse_unordered_set<Internal_Component>* component_set;
-		cpprelude::sequential_iterator<cpprelude::usize> _index_it;
+		component_iterator _component_it;
+		cpprelude::sequential_iterator<component_pool> _pool_it;
+		cpprelude::usize _pool_count = 0;
+		cpprelude::usize _component_count = 0; // per pool
 
-		generic_component_iterator()
-			:component_set(nullptr), _index_it(nullptr)
-		{}
-
-		generic_component_iterator(sparse_unordered_set<Internal_Component>* set, const cpprelude::sequential_iterator<cpprelude::usize>& index_it)
-			:component_set(set), _index_it(index_it)
-		{}
+		generic_component_iterator(cpprelude::sequential_iterator<component_pool> pool_it, cpprelude::usize pool_count)
+			:_pool_it(pool_it), _pool_count(pool_count)
+		{
+			if (_pool_count)
+			{
+				--_pool_count;
+				_component_count = _pool_it->components.count() - 1;
+				_component_it = _pool_it->components.begin();
+			}
+			else
+				_component_count = 0;
+		}
 
 		generic_component_iterator(const generic_component_iterator& other)
-			:component_set(other.component_set), _index_it(other._index_it)
-		{}
+			:_pool_it(other._pool_it), _pool_count(other._pool_count)
+		{
+			if (_pool_count)
+			{
+				--_pool_count;
+				_component_count = _pool_it->components.count() - 1;
+				_component_it = _pool_it->components.begin();
+			}
+			else
+				_component_count = 0;
+		}
 
 		generic_component_iterator&
 		operator++()
 		{
-			++_index_it;
+			if (_component_count)
+			{
+				++_component_it;
+				--_component_count;
+			}
+			else if (_pool_count)
+			{
+				++_pool_it;
+				_component_count = _pool_it->components.count() - 1;
+				_component_it = _pool_it->components.begin();
+				--_pool_count;
+			}
+			else if (!_pool_count)
+				++_pool_it;
+		
 			return *this; 
 		}
 
@@ -42,7 +74,21 @@ namespace ecs
 		operator++(int)
 		{
 			auto result = *this;
-			++_index_it;
+			
+			if (_component_count)
+			{
+				++_component_it;
+				--_component_count;
+			}
+			else if (_pool_count)
+			{
+				++_pool_it;
+				_component_count = _pool_it->components.count() - 1;
+				_component_it = _pool_it->components.begin();
+				--_pool_count;
+			}
+			else if (!_pool_count)
+				++_pool_it;
 
 			return result;
 		}
@@ -50,8 +96,8 @@ namespace ecs
 		bool
 		operator==(const generic_component_iterator& other) const
 		{
-			return _index_it == other._index_it
-				&& component_set == other.component_set;
+			return _pool_it == other._pool_it
+				&& _component_count == other._component_count;
 		}
 
 		bool
@@ -63,86 +109,56 @@ namespace ecs
 		value_type&
 		value()
 		{
-			return component_set->at(*_index_it);
+			return _component_it->first;
 		}
 
 		const value_type&
 		value() const
 		{
-			return component_set->at(*_index_it);
+			return _component_it->first;
 		}
 		
 		value_type&
 		operator*()
 		{
-			return component_set->at(*_index_it);
+			return _component_it->first;
 		}
 
 		const value_type&
 		operator*() const
 		{
-			return component_set->at(*_index_it);
+			return _component_it->first;
 		}
 
-		value_type*
-		operator->()
-		{
-			return component_set->_dense.data() + component_set->_sparse[*_index_it];
-		}*/
 	};
 
 	
 	template<typename T>
 	struct component_iterator
 	{
-	/*	using iterator_category = std::forward_iterator_tag;
+		using component_set_iterator = cpprelude::sequential_iterator<std::pair<Internal_Component, cpprelude::usize>>;
+
+		using iterator_category = std::forward_iterator_tag;
 		using value_type = T;
 		using difference_type = cpprelude::isize;
 		using pointer = T*;
 		using reference = T&;
 		using data_type = T;
 
-		sparse_unordered_set<Internal_Component>* component_set;
-		cpprelude::sequential_iterator<cpprelude::usize> _index_it;
-		const char* _type;
-		cpprelude::usize _size = 0;
-
-		component_iterator()
-			:component_set(nullptr), _index_it(nullptr), _size(0)
+		component_set_iterator _component_it;
+		
+		component_iterator(const component_set_iterator& it)
+			:_component_it(it)
 		{}
 
-		component_iterator(sparse_unordered_set<Internal_Component>* set, cpprelude::sequential_iterator<cpprelude::usize> index_it, const char* type, cpprelude::usize size)
-			:component_set(set), _index_it(index_it), _type(type), _size(size)
-		{
-			while (_size > 0 && component_set->at(*_index_it).utils->type != _type)
-			{
-				++_index_it;
-				--_size;
-			}
-		}
-
 		component_iterator(const component_iterator& other)
-			:component_set(other.component_set), _index_it(other._index_it), _type(other._type), _size(other._size)
-		{
-			while (_size > 0 && component_set->at(*_index_it).utils->type != _type)
-			{
-				++_index_it;
-				--_size;
-			}
-		}
+			:_component_it(other._component_it)
+		{}
 
 		component_iterator&
 		operator++()
 		{
-			++_index_it;
-			--_size;
-			
-			while (_size > 0 && component_set->at(*_index_it).utils->type != _type)
-			{
-				++_index_it;
-				--_size;
-			}
-
+			++_component_it;
 			return *this;
 		}
 
@@ -150,22 +166,14 @@ namespace ecs
 		operator++(int)
 		{
 			auto result = *this;
-			++_index_it;
-			--_size;
-
-			while (_size > 0 && component_set->at(*_index_it).utils->type != _type)
-			{
-				++_index_it;
-				--_size;
-			}
+			++_component_it;
 
 			return result;
 		}
 
 		bool operator==(const component_iterator& other) const
 		{
-			return _index_it == other._index_it
-				&& component_set == other.component_set;
+			return _component_it == other._component_it;
 		}
 
 		bool operator!=(const component_iterator& other) const
@@ -176,67 +184,148 @@ namespace ecs
 		value_type&
 		data()
 		{
-			auto component = component_set->at(*_index_it);
+			auto component = _component_it->first;
 			return *(static_cast<value_type*>(component.data));
 		}
 
 		const value_type&
 		data() const
 		{
-			auto component = component_set->at(*_index_it);
+			auto component = _component_it->first;
 			return *(static_cast<value_type*>(component.data));
 		}
 
-		Component&
+		Internal_Component&
 		value()
 		{
-			return component_set->at(*_index_it);
+			return _component_it->first;
+		}
+
+		_id_type
+		entity()
+		{
+			return _component_it->first.entity_id;
 		}
 
 		value_type&
 		operator*()
 		{
-			auto component = component_set->at(*_index_it);
+			auto component = _component_it->first;
 			return *(static_cast<value_type*>(component.data));
 		}
 
 		const value_type&
 		operator*() const
 		{
-			auto component = component_set->at(*_index_it);
+			auto component = _component_it->first;
 			return *(static_cast<value_type*>(component.data));
-		}
-
-		Component*
-		operator->()
-		{
-			return component_set->_dense.data() + component_set->_sparse[*_index_it];
 		}
 	};
 
-	template<typename iterator>
-	struct view
+	struct entity_components_iterator
 	{
-		iterator _begin_it;
-		iterator _end_it;
+		using component_iterator = cpprelude::sequential_iterator<std::pair<Internal_Component, cpprelude::usize>>;
 
-		view()
-		{}
+		using iterator_category = std::forward_iterator_tag;
+		using value_type = Internal_Component;
+		using difference_type = cpprelude::isize;
+		using pointer = Internal_Component*;
+		using reference = Internal_Component&;
+		using data_type = Internal_Component;
 
-		view(iterator begin_it, iterator end_it)
-			:_begin_it(begin_it), _end_it(end_it)
+		cpprelude::sequential_iterator<component_pool> _pool_it;
+		cpprelude::usize _pool_count = 0;
+		_id_type _entity_id;
+		
+		entity_components_iterator(cpprelude::sequential_iterator<component_pool> pool_it, cpprelude::usize pool_count, _id_type entity_id)
+			:_pool_it(pool_it), _pool_count(pool_count), _entity_id(entity_id)
+		{
+			if (_pool_count)
+				--pool_count;
+			
+			while (_pool_count && !_pool_it->components.has(_entity_id))
+			{
+				++_pool_it;
+				--_pool_count;
+			}
+		}
+
+		entity_components_iterator(const entity_components_iterator& other)
+			:_pool_it(other._pool_it), _pool_count(other._pool_count), _entity_id(other._entity_id)
+		{
+			if (_pool_count)
+				--_pool_count;
+			
+			while (_pool_count && !_pool_it->components.has(_entity_id))
+			{
+				++_pool_it;
+				--_pool_count;
+			}
+		}
+
+		entity_components_iterator&
+		operator++()
+		{
+			++_pool_it;
+			--_pool_count;
+
+			while (_pool_count > 0 && !_pool_it->components.has(_entity_id))
+			{
+				++_pool_it;
+				--_pool_count;
+			}
+		}
+
+		entity_components_iterator&
+		operator++(int)
+		{
+
+		}
+	};
+
+	struct generic_component_view
+	{
+		using iterator = generic_component_iterator;
+		cpprelude::dynamic_array<component_pool>& _pools;
+
+		generic_component_view(cpprelude::dynamic_array<component_pool>& pools)
+			:_pools(pools)
 		{}
 
 		iterator
 		begin()
 		{
-			return _begin_it;
+			return iterator(_pools.begin(), _pools.count());
+		}
+		
+		iterator
+		end()
+		{
+			return iterator(_pools.end(), 0);
+		}
+	};
+
+	template<typename T>
+	struct component_view
+	{
+		using iterator = component_iterator<T>;
+
+		sparse_unordered_set<Internal_Component>& _components;
+
+		component_view(sparse_unordered_set<Internal_Component>& components)
+			:_components(components)
+		{}
+
+		iterator
+		begin()
+		{
+			return iterator(_components.begin());
 		}
 
 		iterator
 		end()
 		{
-			return _end_it;
-		}*/
+			return iterator(_components.end());
+		}
 	};
 }

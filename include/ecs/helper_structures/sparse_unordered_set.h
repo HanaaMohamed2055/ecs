@@ -268,7 +268,7 @@ namespace ecs
 		~sparse_unordered_set()
 		{}
 	};
-
+	
 	// this specialization is intended for use inside this entity-component system
 	template<>
 	struct sparse_unordered_set<Entity>
@@ -418,6 +418,19 @@ namespace ecs
 		}
 
 		~sparse_unordered_set()
+		{}
+	};
+
+	struct component_pool
+	{
+		utility::base_type_utils* utils = nullptr;
+		cpprelude::memory_context* _context = nullptr;
+
+		sparse_unordered_set<Internal_Component> components;
+
+		component_pool(cpprelude::memory_context* context)
+			:_context(context),
+			components(context)
 		{}
 	};
 }

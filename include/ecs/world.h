@@ -85,8 +85,8 @@ namespace ecs
 				component.managed = true;
 			
 				// registering component with the world and the entity 
-				cpprelude::usize component_index = pool.components.insert(component);
-				
+				pool.components.insert_at(e.id(), component);
+
 				return *(static_cast<T*>(component.data));
 			}
 		}
@@ -123,7 +123,7 @@ namespace ecs
 				component.managed = true;
 
 				// registering component with the world and the entity 
-				cpprelude::usize component_index = pool.components.insert(component);
+				pool.components.insert_at(e.id(), component);
 
 				return *(static_cast<T*>(component.data));
 			}
@@ -153,7 +153,7 @@ namespace ecs
 				component.managed = true;
 
 				// registering component with the world and the entity 
-				cpprelude::usize component_index = pool.components.insert(component);
+				pool.components.insert_at(e.id(), component);
 
 				return *(static_cast<T*>(component.data));
 			}
@@ -175,80 +175,35 @@ namespace ecs
 				return false;
 			
 			auto type = utility::get_type_identifier<T>();
-			component_pool& pool = component_types[type];
-			auto entity_id = e.id();
-
-			for (auto component : pool.components)
-			{
-				if (component.first.entity_id == entity_id)
-					return true;
-			}
-
-			return false;
+			auto pool = component_types[type].components;
+			
+			return pool.has(e.id());
 		}
 						
 		template<typename T>
 		void
 		remove_property(Entity e)
 		{
-			if (!entity_alive(e) || !type_exists<T>())
+			if (!entity_alive(e) || !type_exists<T>() || !has<T>(e))
 				return;
 
 			auto type = utility::get_type_identifier<T>();
-			component_pool& pool = component_types[type];
+			auto& pool = component_types[type].components;
 			auto entity_id = e.id();
-						
-			for(auto& component: pool.components)
-			{
-				if (component.first.entity_id == entity_id)
-				{
-					if (component.first.managed)
-						pool.utils->free(component.first.data, pool._context);
-
-					pool.components.remove(component.second);
-					break;
-				}
-			}
+			pool.remove(entity_id);
 		}
 		
-		/*
+		
 		template<typename T> 
 		T& 
 		get(Entity e)
 		{	
-			if (e.id != INVALID_ID && e.world == this)
-			{
-				const char* type = utility::get_type_name<T>();
-				auto components = ledger[e.id];
-
-				for (auto index: components)
-				{
-					auto component = component_set[index];
-					if (component.utils->type == type)
-						return *(static_cast<T*>(component.data));
-				}
-			}
-		}
-		
-		template<typename T>
-		view<component_iterator<T>>
-		get_entity_properties(Entity e)
-		{
-			if(e.id != INVALID_ID && e.world == this)
-			{
-				const char* type = utility::get_type_name<T>();
-				auto& components = ledger[e.id];
-
-				component_iterator<T> begin(&component_set, components.begin(), type, components.count());
-				component_iterator<T> end(&component_set, components.end(), type, 0);
-
-				return view<component_iterator<T>>(begin, end);
-			}
-
-			return view<component_iterator<T>>();
+			auto type = utility::get_type_identifier<T>();
+			auto pool = component_types[type].components;
+			return *((T*)pool[e.id()].data);
 		}
 
-		template<typename T>
+		/*template<typename T>
 		view<component_iterator<T>>
 		get_world_components()
 		{
@@ -267,8 +222,8 @@ namespace ecs
 		//API_ECS sparse_unordered_set<Component>&
 		//get_all_world_components();
 		//		
-		//API_ECS sparse_unordered_set<Entity>&
-		//get_all_world_entities();
+		API_ECS sparse_unordered_set<Entity>&
+		get_all_world_entities();
 						
 		API_ECS void
 		kill_entity(Entity e);

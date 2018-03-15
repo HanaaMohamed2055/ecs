@@ -14,15 +14,16 @@ namespace ecs
 	// This structure exists mainly to facilitate the following:
 	// 1- iterating densely through the _dense container using range_based loops and iterators
 	// 2- Maintaining access by ID/actual_index  and asking for membership
+	constexpr cpprelude::usize INVALID_PLACE = -1;
 
 	template<typename T>
 	struct sparse_unordered_set
-	{
+	{	
 		using iterator = cpprelude::sequential_iterator<std::pair<T, cpprelude::usize>>;
 		using const_iterator = cpprelude::sequential_iterator<std::pair<const T, cpprelude::usize>>;
-
+				
 		cpprelude::dynamic_array <std::pair <T, cpprelude::usize>> _dense;
-		cpprelude::dynamic_array<cpprelude::isize> _sparse;
+		cpprelude::dynamic_array<cpprelude::usize> _sparse;
 		cpprelude::usize next;
 		cpprelude::usize recycle_count = 0;
 
@@ -31,7 +32,7 @@ namespace ecs
 			_sparse(context)
 		{}
 								
-		template<typename ... TArgs>
+	/*	template<typename ... TArgs>
 		cpprelude::usize
 		emplace(TArgs&& ... args)
 		{
@@ -56,6 +57,7 @@ namespace ecs
 		insert(T&& value)
 		{
 			cpprelude::usize place = _sparse.count();
+			
 
 			if (recycle_count > 0)
 			{
@@ -90,13 +92,66 @@ namespace ecs
 			_dense.emplace_back(std::make_pair(value, place));
 			
 			return place;
+		}*/
+
+		template<typename ... TArgs>
+		void
+		emplace_at(cpprelude::usize index, TArgs&&... args)
+		{
+			if (_sparse.count() <= index)
+			{
+				if(_sparse.capacity() <= index)
+					_sparse.reserve(2 * (index + 1));
+				
+				_sparse[index] = _dense.count();
+				++_sparse._count;
+				_dense.emplace_back(std::make_pair(std::forward<TArgs>(args)..., index));
+			}
+			else
+				_dense[_sparse[index]].first = T(std::forward<TArgs>(args)...);
+		}
+				
+		template<typename T>
+		void
+		insert_at(cpprelude::usize index, T&& value)
+		{
+			if (_sparse.count() <= index)
+			{
+				if (_sparse.capacity() <= index)
+					_sparse.reserve(2 * (index + 1));
+
+				_sparse[index] = _dense.count();
+				++_sparse._count;
+				_dense.emplace_back(std::make_pair(std::move(value), index));
+			}
+			else
+				_dense[_sparse[index]].first = T(std::move(value));
+		}
+
+		template<typename T>
+		void
+		insert_at(cpprelude::usize index, const T& value)
+		{
+			if (_sparse.count() <= index)
+			{
+				if (_sparse.capacity() <= index)
+					_sparse.reserve(2 * (index + 1));
+
+				_sparse[index] = _dense.count();
+				++_sparse._count;
+				_dense.emplace_back(std::make_pair(value, index));
+			}
+			else
+				_dense[_sparse[index]].first = T(std::move(value));
 		}
 
 		bool
 		has(cpprelude::usize index)
 		{
-			return _sparse[index] < _dense.count() 
-				&& _sparse[index] > -1 
+			return 
+				index < _sparse.count()
+				&& _sparse[index] < _dense.count() 
+				&& _sparse[index] != INVALID_PLACE
 				&& _dense[_sparse[index]].second == index ;
 		}
 
@@ -108,7 +163,7 @@ namespace ecs
 			std::swap(_dense[dense_index], _dense[_dense.count() - 1]);
 			_sparse[_dense[dense_index].second] = dense_index;
 			
-			_sparse[sparse_index] = -1;
+			_sparse[sparse_index] = INVALID_PLACE;
 			_dense.remove_back();
 			
 			if (recycle_count > 0)

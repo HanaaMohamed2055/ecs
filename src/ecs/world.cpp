@@ -34,11 +34,11 @@ namespace ecs
 		return component_set;
 	}*/
 
-	/*sparse_unordered_set<Entity>&
+	sparse_unordered_set<Entity>&
 	World::get_all_world_entities()
 	{
 		return entity_set;
-	}*/
+	}
 
 	void
 	World::kill_entity(Entity e)
@@ -55,16 +55,14 @@ namespace ecs
 		for (auto& pool : component_types)
 		{
 			auto& components = pool.components;
-			for (auto& component : components)
+			if (components.has(entity_id))
 			{
-				if (component.first.entity_id == entity_id)
-				{
-					if (component.first.managed)
-						pool.utils->free(component.first.data, pool._context);
-
-					pool.components.remove(component.second);
-					break;
-				}
+				auto& component = components[entity_id];
+				
+				if (component.managed)
+					pool.utils->free(component.data, pool._context);
+			
+				components.remove(entity_id);
 			}
 		}
 	}

@@ -100,7 +100,7 @@ namespace ecs
 	{
 		void* data = nullptr;
 		_id_type entity_id;
-		bool dynamically_allocated = false;
+		bool managed = false;
 	};
 
 	// still I am not so sure I will be using this or not

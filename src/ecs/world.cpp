@@ -45,28 +45,28 @@ namespace ecs
 	{
 		if (!entity_alive(e))
 			return;
-
+		
+		cpprelude::usize entity_id = e.id();
+		
 		// remove the entity
-		entity_set.remove(e.id());
+		entity_set.remove(entity_id);
 
-	//	// remove the entity components
-	//	auto entity_components = ledger[e.id];
-	//	for (auto index: entity_components)
-	//	{
-	//		auto& component = component_set[index];
-	//		
-	//		auto& typed_components = type_table[component.utils->type];
-	//		auto itr = std::find(typed_components.begin(), typed_components.end(), index);
-	//		std::swap(typed_components[typed_components.count() - 1], *itr);
-	//		typed_components.remove_back();
-	//	
-	//		if(component.dynamically_allocated)
-	//			component.utils->free(component.data, _context);
-	//	
-	//		component_set.remove(index);
-	//	}
-	//	ledger.remove(e.id);
+		// remove the entity components
+		for (auto& pool : component_types)
+		{
+			auto& components = pool.components;
+			for (auto& component : components)
+			{
+				if (component.first.entity_id == entity_id)
+				{
+					if (component.first.managed)
+						pool.utils->free(component.first.data, pool._context);
 
+					pool.components.remove(component.second);
+					break;
+				}
+			}
+		}
 	}
 
 	//void

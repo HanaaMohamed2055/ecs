@@ -7,15 +7,29 @@
 
 int main()
 {
-	//benchmark();
+	benchmark();
 	
-	ecs::World world;
-	auto entity = world.create_entity();
-	world.add_property<u32>(entity, (u32)392);
-	world.add_property<r32>(entity, (r32)823.28);
-	world.add_property<r64>(entity, (r64)1029.8888888);
+	/*ecs::World world;
+	auto e1 = world.create_entity();
+	auto e2 = world.create_entity();
+	
+	world.add_property<u32>(e1, (u32)392);
+	world.add_property<r32>(e1, (r32)823.28);
+	world.add_property<r64>(e1, (r64)1029.8888888);
+	
+	world.add_property<u32>(e2, (u32)300);
+	world.add_property<r32>(e2, (r32)8.28);
+	world.add_property<r64>(e2, (r64)500.4739);
 
-	std::cout << world.has<u32>(entity) << std::endl;
-	std::cout << world.has<r32>(entity) << std::endl;
-	std::cout << world.has<char>(entity) << std::endl;
+	std::cout << world.has<u32>(e1) << std::endl;
+	std::cout << world.has<r32>(e1) << std::endl;
+	std::cout << world.has<char>(e1) << std::endl;
+	
+	world.remove_property<u32>(e1);
+	std::cout << world.has<u32>(e1) << std::endl;
+	std::cout << world.has<r32>(e1) << std::endl;
+	std::cout << world.has<char>(e1) << std::endl;
+	
+	world.kill_entity(e1);
+	world.kill_entity(e2);*/
 }

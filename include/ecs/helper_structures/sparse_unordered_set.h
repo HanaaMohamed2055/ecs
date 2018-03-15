@@ -23,7 +23,7 @@ namespace ecs
 
 		cpprelude::dynamic_array <std::pair <T, cpprelude::usize>> _dense;
 		cpprelude::dynamic_array<cpprelude::isize> _sparse;
-		cpprelude::isize next = -1;
+		cpprelude::usize next;
 		cpprelude::usize recycle_count = 0;
 
 		sparse_unordered_set(cpprelude::memory_context* context = cpprelude::platform->global_memory)
@@ -39,11 +39,16 @@ namespace ecs
 			
 			if (recycle_count > 0)
 			{
+				--recycle_count;
+				place = next;
+				next = _sparse[next];
+				new (_sparse.data() + place) cpprelude::usize(_dense.count());
 			}
+			else
+				_sparse.insert_back(_dense.count());
 
 			_dense.emplace_back(std::make_pair(std::forward<TArgs>(args)..., place));
-			_sparse.insert_back(_dense.count() - 1);
-
+			
 			return place;
 		}
 
@@ -54,10 +59,15 @@ namespace ecs
 
 			if (recycle_count > 0)
 			{
+				--recycle_count;
+				place = next;
+				next = _sparse[next];
+				new (_sparse.data() + place) cpprelude::usize(_dense.count());
 			}
+			else
+				_sparse.insert_back(_dense.count());
 
 			_dense.emplace_back(std::make_pair(std::move(value), place));
-			_sparse.insert_back(_dense.count() - 1);
 			
 			return place;
 		}
@@ -69,10 +79,15 @@ namespace ecs
 
 			if (recycle_count > 0)
 			{
+				--recycle_count;
+				place = next;
+				next = _sparse[next];
+				new (_sparse.data() + place) cpprelude::usize(_dense.count());
 			}
+			else
+				_sparse.insert_back(_dense.count());
 
 			_dense.emplace_back(std::make_pair(value, place));
-			_sparse.insert_back(_dense.count() - 1);
 			
 			return place;
 		}
@@ -95,7 +110,11 @@ namespace ecs
 			
 			_sparse[sparse_index] = -1;
 			_dense.remove_back();
-			// here we should add some logic for next 
+			
+			if (recycle_count > 0)
+				_sparse[sparse_index] = next;
+			next = sparse_index;
+			++recycle_count;
 		}
 		
 		// [] and at are used to retrieve the object using its index in the sparse container

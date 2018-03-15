@@ -192,10 +192,10 @@ benchmark()
 	CPPRELUDE_BENCHMARK(create_ecs_entities, limit)
 	});
 	
-	//compare_benchmark(std::cout, {
-	//CPPRELUDE_BENCHMARK(destroy_entt_entities, limit),
-	//CPPRELUDE_BENCHMARK(destroy_ecs_entities, limit)
-	//});
+	compare_benchmark(std::cout, {
+	CPPRELUDE_BENCHMARK(destroy_entt_entities, limit),
+	CPPRELUDE_BENCHMARK(destroy_ecs_entities, limit)
+	});
 
 	compare_benchmark(std::cout, {
 	CPPRELUDE_BENCHMARK(create_entt_small_entities, limit),

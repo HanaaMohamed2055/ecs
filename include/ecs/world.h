@@ -82,7 +82,7 @@ namespace ecs
 				component.data = pool._context->alloc<T>();
 				new (component.data) T(std::forward<TArgs>(args)...);
 				component.entity_id = e.id();
-				component.dynamically_allocated = true;
+				component.managed = true;
 			
 				// registering component with the world and the entity 
 				cpprelude::usize component_index = pool.components.insert(component);
@@ -120,7 +120,7 @@ namespace ecs
 				component.data = pool._context->alloc<T>();
 				new (component.data) T(value);
 				component.entity_id = e.id();
-				component.dynamically_allocated = true;
+				component.managed = true;
 
 				// registering component with the world and the entity 
 				cpprelude::usize component_index = pool.components.insert(component);
@@ -150,7 +150,7 @@ namespace ecs
 				Internal_Component component;
 				component.data = data;
 				component.entity_id = e.id();
-				component.dynamically_allocated = true;
+				component.managed = true;
 
 				// registering component with the world and the entity 
 				cpprelude::usize component_index = pool.components.insert(component);
@@ -158,14 +158,22 @@ namespace ecs
 				return *(static_cast<T*>(component.data));
 			}
 		}
-				
+			
+		template<typename T>
+		bool
+		type_exists()
+		{
+			auto type = utility::get_type_identifier<T>();
+			return type < component_types.count();
+		}
+
 		template<typename T>
 		bool
 		has(Entity e)
 		{
-			if (!entity_alive(e))
+			if (!entity_alive(e) || !type_exists<T>())
 				return false;
-
+			
 			auto type = utility::get_type_identifier<T>();
 			component_pool& pool = component_types[type];
 			auto entity_id = e.id();
@@ -178,24 +186,33 @@ namespace ecs
 
 			return false;
 		}
-				
+						
 		template<typename T>
 		void
 		remove_property(Entity e)
 		{
-			if (!entity_alive(e))
+			if (!entity_alive(e) || !type_exists<T>())
 				return;
 
 			auto type = utility::get_type_identifier<T>();
 			component_pool& pool = component_types[type];
 			auto entity_id = e.id();
+						
+			for(auto& component: pool.components)
+			{
+				if (component.first.entity_id == entity_id)
+				{
+					if (component.first.managed)
+						pool.utils->free(component.first.data, pool._context);
 
-			
+					pool.components.remove(component.second);
+					break;
+				}
+			}
 		}
 		
-
 		/*
-		template<typename T>
+		template<typename T> 
 		T& 
 		get(Entity e)
 		{	

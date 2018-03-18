@@ -315,7 +315,7 @@ namespace ecs
 		}
 
 		bool
-		has(Entity entity)
+		has(ID entity)
 		{
 			return _sparse[entity.id()].version() == entity.version() && _sparse[entity.id()].id() < _dense.count();
 		}

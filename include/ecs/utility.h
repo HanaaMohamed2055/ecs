@@ -40,7 +40,7 @@ namespace utility
 		template<typename T>
 		struct type_helper
 		{			
-			static char* 
+			static const char* 
 			get_type_name()
 			{
 				// here we should account for GCC later as it is claimed not to have __FUNCTION macro
@@ -50,8 +50,7 @@ namespace utility
 				memcpy(type_name, __FUNCTION__ + FRONT_SIZE, size - 1u);
 				return type_name;
 			}
-
-		
+					
 			static cpprelude::usize
 			get_type_identifier()
 			{
@@ -61,7 +60,7 @@ namespace utility
 	}
 	
 	template<typename T>
-	char* 
+	const char* 
 	get_type_name()
 	{
 		return details::type_helper<T>::get_type_name();

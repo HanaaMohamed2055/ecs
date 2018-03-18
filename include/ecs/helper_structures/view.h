@@ -4,7 +4,7 @@
 
 #include <ecs/helper_structures/sparse_unordered_set.h>
 #include <ecs/elements.h>
-
+#include <ecs/utility.h>
 namespace ecs
 {
 	struct generic_component_iterator
@@ -130,6 +130,11 @@ namespace ecs
 			return _component_it->first;
 		}
 
+		const char*
+		type() const
+		{
+			return _pool_it->utils->type;
+		}
 	};
 
 	
@@ -274,20 +279,97 @@ namespace ecs
 				++_pool_it;
 				--_pool_count;
 			}
+
+			return *this;
 		}
 
 		entity_components_iterator&
 		operator++(int)
 		{
+			auto result = *this;
+			++_pool_it;
+			--_pool_count;
 
+			while (_pool_count > 0 && !_pool_it->components.has(_entity_id))
+			{
+				++_pool_it;
+				--_pool_count;
+			}
+		
+			return result;
 		}
+		
+		bool operator==(const entity_components_iterator& other) const
+		{
+			return _pool_it == other._pool_it
+				&& _entity_id == other._entity_id;
+		}
+
+		bool operator!=(const entity_components_iterator& other) const
+		{
+			return !operator==(other);
+		}
+
+		value_type&
+		value()
+		{
+			return _pool_it->components[_entity_id];
+		}
+
+		const value_type&
+		value() const
+		{
+			return  _pool_it->components[_entity_id];
+		}
+				
+		value_type&
+		operator*()
+		{
+			return  _pool_it->components[_entity_id];
+		}
+
+		const value_type&
+		operator*() const
+		{
+			return  _pool_it->components[_entity_id];
+		}
+
+		const char*
+		type() const
+		{
+			return _pool_it->utils->type;
+		}
+	};
+
+	struct entity_components_view
+	{
+		using iterator = entity_components_iterator;
+		cpprelude::dynamic_array<component_pool>& _pools;
+		_id_type _entity_id;
+
+		entity_components_view(cpprelude::dynamic_array<component_pool>& pools, _id_type entity_id)
+			:_pools(pools), _entity_id(entity_id)
+		{}
+
+		iterator
+		begin()
+		{
+			return iterator(_pools.begin(), _pools.count(), _entity_id);
+		}
+	
+		iterator
+		end()
+		{
+			return iterator(_pools.end(), 0, _entity_id);
+		}
+
 	};
 
 	struct generic_component_view
 	{
 		using iterator = generic_component_iterator;
 		cpprelude::dynamic_array<component_pool>& _pools;
-
+		
 		generic_component_view(cpprelude::dynamic_array<component_pool>& pools)
 			:_pools(pools)
 		{}

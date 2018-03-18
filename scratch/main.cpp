@@ -7,15 +7,17 @@
 
 int main()
 {
-	//benchmark();
+	benchmark();
 	
-	ecs::World world;
+	/*ecs::World world;
 	auto view = world.get_all_world_components();
 	auto type_view = world.get_world_components<r32>();
-
+	
 	auto e1 = world.create_entity();
 	auto e2 = world.create_entity();
-	
+
+	auto entity_view = world.get_all_entity_properties(e1);
+
 	world.add_property<u32>(e1, (u32)392);
 	world.add_property<r32>(e1, (r32)823.28);
 	world.add_property<r64>(e1, (r64)1029.8888888);
@@ -45,6 +47,14 @@ int main()
 		std::cout << component << std::endl;
 	}
 
+	std::cout << "---------------------------------\n";
+	
+	for(auto it = entity_view.begin(); it != entity_view.end(); ++it)
+	{
+		std::cout << it.type() << std::endl;
+		std::cout << (*it).data << std::endl;
+	 }
+
 	world.kill_entity(e1);
-	world.kill_entity(e2);
+	world.kill_entity(e2);*/
 }

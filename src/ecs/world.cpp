@@ -11,22 +11,17 @@ namespace ecs
 	bool
 	World::entity_alive(Entity entity)
 	{
-		return entity.world == this && entity_set.has(entity);
+		return entity.world == this && entity_set.has(entity.id());
 	}
 	
-	/*view<generic_component_iterator>
+	entity_components_view
 	World::get_all_entity_properties(Entity e)
 	{
-		if (e.id != INVALID_ID && e.world == this)
+		if (entity_alive(e))
 		{
-			auto& components = ledger[e.id];
-			generic_component_iterator begin(&component_set, components.begin());
-			generic_component_iterator end(&component_set, components.end());
-			return view<generic_component_iterator>(begin, end);
+			return entity_components_view(component_types, e.id());
 		}
-
-		return view<generic_component_iterator>();
-	}*/
+	}
 
 	generic_component_view
 	World::get_all_world_components()
@@ -66,6 +61,7 @@ namespace ecs
 			}
 		}
 	}
+
 
 	//void
 	//World::clean_up()

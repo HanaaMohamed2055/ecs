@@ -208,8 +208,8 @@ namespace ecs
 			return component_view<T>(components);
 		}
 
-		//API_ECS view<generic_component_iterator>
-		//get_all_entity_properties(Entity e);
+		API_ECS entity_components_view
+		get_all_entity_properties(Entity e);
 		
 		API_ECS generic_component_view
 		get_all_world_components();

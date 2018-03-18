@@ -16,17 +16,37 @@ namespace ecs
 		using entity_components = cpprelude::dynamic_array<cpprelude::dynamic_array <std::pair<cpprelude::usize, cpprelude::usize>>> ;
 
 		sparse_unordered_set<Entity> entity_set;
-		cpprelude::dynamic_array<component_pool> component_types;
+		cpprelude::dynamic_array<component_pool> component_pools;
 		cpprelude::memory_context* _context;
 	
 		World(cpprelude::memory_context* context = cpprelude::platform->global_memory)
 			:_context(context),
 			entity_set(context),
-			component_types(context)
+			component_pools(context)
 		{}
 				
 		API_ECS Entity
 		create_entity();
+
+		template<typename T>
+		component_pool&
+			get_pool(cpprelude::memory_context* context = cpprelude::platform->global_memory)
+		{
+			cpprelude::usize type = utility::get_type_identifier<T>();
+			
+			// prealllocation at the beginning
+			if (type >= component_pools.capacity())
+				component_pools.expand_back(type + 1);
+
+			if (component_pools[type]._context == nullptr)
+			{
+				component_pools[type] = (component_pool(context));
+				component_pools[type].utils = utility::get_type_utils<T>();
+			}
+			
+			return component_pools[type];
+		}
+
 
 		template<typename T>
 		void
@@ -41,10 +61,17 @@ namespace ecs
 		entity_alive(Entity entity);
 		
 		template<typename T, typename ... TArgs>
+		Entity
+		create_entity()
+		{
+
+		}
+
+		template<typename T, typename ... TArgs>
 		T&
 		add_property(Entity e, TArgs&& ... args)
 		{
-			return add_property(e, _context, std::forward<TArgs>(args)...);
+			return add_property<T, TArgs...>(e, _context, std::forward<TArgs>(args)...);
 		}
 
 		template<typename T, typename ... TArgs>
@@ -53,16 +80,7 @@ namespace ecs
 		{
 			if (entity_alive(e))
 			{
-				cpprelude::usize type = utility::get_type_identifier<T>();
-
-				// prealllocation at the beginning
-				if (type >= component_types.count())
-				{
-					component_types.insert_back(component_pool(_context));
-					component_types[type].utils = utility::get_type_utils<T>();
-				}
-
-				auto& pool = component_types[type];
+				auto& pool = get_pool<T>(context);
 
 				// constructing component itself
 				Internal_Component component;
@@ -82,7 +100,7 @@ namespace ecs
 		T&
 		add_property(Entity e, const T& value)
 		{
-			return add_property(e, _context, value);
+			return add_property<T>(e, _context, value);
 		}
 		
 		template<typename T>
@@ -91,16 +109,7 @@ namespace ecs
 		{
 			if (entity_alive(e))
 			{
-				cpprelude::usize type = utility::get_type_identifier<T>();
-
-				// prealllocation at the beginning
-				if (type >= component_types.count())
-				{
-					component_types.insert_back(component_pool(context));
-					component_types[type].utils = utility::get_type_utils<T>();
-				}
-
-				auto& pool = component_types[type];
+				auto& pool = get_pool<T>(context);
 
 				// constructing component itself
 				Internal_Component component;
@@ -122,16 +131,7 @@ namespace ecs
 		{
 			if (entity_alive(e))
 			{
-				cpprelude::usize type = utility::get_type_identifier<T>();
-
-				// prealllocation at the beginning
-				if (type >= component_types.count())
-				{
-					component_types.insert_back(component_pool(_context));
-					component_types[type].utils = utility::get_type_utils<T>();
-				}
-
-				auto& pool = component_types[type];
+				auto& pool = get_pool<T>();
 
 				// constructing component itself/////
 				Internal_Component component;
@@ -151,7 +151,7 @@ namespace ecs
 		type_exists()
 		{
 			auto type = utility::get_type_identifier<T>();
-			return type < component_types.count();
+			return (type < component_pools.count() && component_pools[type]._context != nullptr);
 		}
 
 		template<typename T>
@@ -162,7 +162,7 @@ namespace ecs
 				return false;
 			
 			auto type = utility::get_type_identifier<T>();
-			auto pool = component_types[type].components;
+			auto pool = component_pools[type].components;
 			
 			return pool.has(e.id());
 		}
@@ -179,8 +179,7 @@ namespace ecs
 			auto entity_id = e.id();
 			pool.remove(entity_id);
 		}
-		
-		
+				
 		template<typename T> 
 		T& 
 		get(Entity e)
@@ -194,17 +193,7 @@ namespace ecs
 		component_view<T>
 		get_world_components()
 		{
-			cpprelude::usize type = utility::get_type_identifier<T>();
-			
-			// if it does not exist, create it
-			if (type >= component_types.count())
-			{
-				component_types.insert_back(component_pool(_context));
-				component_types[type].utils = utility::get_type_utils<T>();
-			}
-
-			auto& components = component_types[type].components;
-
+			auto& components = get_pool<T>().components;
 			return component_view<T>(components);
 		}
 
@@ -219,6 +208,9 @@ namespace ecs
 						
 		API_ECS void
 		kill_entity(Entity e);
+
+		API_ECS void
+		kill_entity(ID entity_id);
 
 		//API_ECS void
 		//clean_up();

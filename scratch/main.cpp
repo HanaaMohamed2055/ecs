@@ -7,9 +7,9 @@
 
 int main()
 {
-	benchmark();
+	//benchmark();
 	
-	/*ecs::World world;
+	ecs::World world;
 	auto view = world.get_all_world_components();
 	auto type_view = world.get_world_components<r32>();
 	
@@ -27,34 +27,34 @@ int main()
 	world.add_property<r64>(e2, (r64)500.4739);
 	
 	auto& entities = world.get_all_world_entities();
-	for (auto e : entities)
-		std::cout << e.id() << " " << e.version() << std::endl;
-		
-	for (auto component : view)
-	{
-		std::cout << component.entity_id << std::endl;
-		std::cout << component.data << std::endl;
-	}
+	//for (auto e : entities)
+	//	std::cout << e.id() << " " << e.version() << std::endl;
+	//	
+	//for (auto component : view)
+	//{
+	//	std::cout << component.entity_id << std::endl;
+	//	std::cout << component.data << std::endl;
+	//}
 
-	for (auto it = type_view.begin(); it != type_view.end(); ++it)
-	{
-		std::cout << it.entity() << std::endl;
-		std::cout << it.data() << std::endl;
-	}
+	//for (auto it = type_view.begin(); it != type_view.end(); ++it)
+	//{
+	//	std::cout << it.entity() << std::endl;
+	//	std::cout << it.data() << std::endl;
+	//}
 
-	for (auto component : type_view)
-	{
-		std::cout << component << std::endl;
-	}
+	//for (auto component : type_view)
+	//{
+	//	std::cout << component << std::endl;
+	//}
 
 	std::cout << "---------------------------------\n";
-	
-	for(auto it = entity_view.begin(); it != entity_view.end(); ++it)
-	{
-		std::cout << it.type() << std::endl;
-		std::cout << (*it).data << std::endl;
-	 }
+	std::cout << world.type_exists<u32>() << std::endl;
+	std::cout << world.type_exists<r32>() << std::endl;
+	std::cout << world.type_exists<char>() << std::endl;
+	std::cout << "---------------------------------\n";
 
-	world.kill_entity(e1);
+	/*world.kill_entity(e1);
 	world.kill_entity(e2);*/
+	
+	world.add_property<u32>(world.create_entity());
 }

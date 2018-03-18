@@ -35,6 +35,7 @@ create_ecs_entities(workbench* bench, usize limit)
 
 	for (usize i = 0; i < limit; ++i)
 		world.create_entity();
+
 	
 	bench->watch.stop();
 }
@@ -53,56 +54,57 @@ create_entt_entities(workbench* bench, usize limit)
 //
 //
 void
-destroy_ecs_entities(workbench* bench, ecs::World* w, cpprelude::dynamic_array<ecs::Entity> entities)
+destroy_ecs_entities(workbench* bench, cpprelude::usize limit)
 {
-	//ecs::World world;
-	//dynamic_array<ecs::Entity> entities;
+	ecs::World world;
 	bench->watch.start();
 
-	/*for (usize i = 0; i < limit; ++i)
-		entities.insert_back(world.create_entity());*/
+	for (usize i = 0; i < limit; ++i)
+		world.create_entity();
 
-	for (auto entity: entities)
-		w->kill_entity(entity);
+	for (auto entity: world.get_all_world_entities())
+		world.kill_entity(entity);
 
 	bench->watch.stop();
 }
 //
 void
-destroy_entt_entities(workbench* bench, entt::DefaultRegistry* registry, cpprelude::dynamic_array<entt::DefaultRegistry::entity_type> entities)
+destroy_entt_entities(workbench* bench, cpprelude::usize limit)
 {
-	//entt::DefaultRegistry registry;
-	//dynamic_array<entt::DefaultRegistry::entity_type> entities;
+	entt::DefaultRegistry registry;
+	dynamic_array<entt::DefaultRegistry::entity_type> entities;
 	bench->watch.start();
 
-	/*for (usize i = 0; i < limit; ++i)
-		entities.insert_back(registry.create());*/
+	for (usize i = 0; i < limit; ++i)
+		entities.insert_back(registry.create());
 
 	for (auto entity: entities)
-		registry->destroy(entity);
+		registry.destroy(entity);
 
 	bench->watch.stop();
 }
 //
 // creating, iterating and destroying small entities (entities with only one component)
 void
-create_ecs_small_entities(workbench* bench, ecs::World* w, cpprelude::dynamic_array<ecs::Entity> entities)
+create_ecs_small_entities(workbench* bench, cpprelude::usize limit)
 {
+	ecs::World world;
 	bench->watch.start();
-
-	for (auto e: entities)
-		w->add_property<Position>(e, Position());
+	
+	for (usize i = 0; i < limit; ++i)
+		world.add_property<Position>(world.create_entity());
 	
 	bench->watch.stop();
 }
 
 void
-create_entt_small_entities(workbench* bench, entt::DefaultRegistry* registry, cpprelude::dynamic_array<entt::DefaultRegistry::entity_type> entities)
+create_entt_small_entities(workbench* bench, cpprelude::usize limit)
 {
+	entt::DefaultRegistry registry;
 	bench->watch.start();
 	
-	for (auto e: entities)
-		registry->assign<Position>(e, Position());
+	for (usize i = 0; i < limit; ++i)
+		registry.create<Position>();
 
 	bench->watch.stop();
 }
@@ -166,22 +168,22 @@ destroy_entt_small_entities(workbench* bench, entt::DefaultRegistry* registry)
 void
 benchmark()
 {
-	usize limit = 100;
+	usize limit = 1000000;
 
 	compare_benchmark(std::cout, {
 	CPPRELUDE_BENCHMARK(create_entt_entities, limit),
 	CPPRELUDE_BENCHMARK(create_ecs_entities, limit)
 	});
 	
-	//compare_benchmark(std::cout, {
-	//CPPRELUDE_BENCHMARK(create_entt_small_entities, &registry, entities_entt),
-	//CPPRELUDE_BENCHMARK(create_ecs_small_entities, &w, entities)
-	//});
-	//
-	//compare_benchmark(std::cout, {
-	//	CPPRELUDE_BENCHMARK(destroy_entt_entities, &registry, entities_entt),
-	//	CPPRELUDE_BENCHMARK(destroy_ecs_entities, &w, entities)
-	//});
+	compare_benchmark(std::cout, {
+	CPPRELUDE_BENCHMARK(create_entt_small_entities, limit),
+	CPPRELUDE_BENCHMARK(create_ecs_small_entities, limit)
+	});
+	
+	compare_benchmark(std::cout, {
+		CPPRELUDE_BENCHMARK(destroy_entt_entities, limit),
+		CPPRELUDE_BENCHMARK(destroy_ecs_entities, limit)
+	});
 
 	//ecs::World world;
 	//for (usize i = 0; i < limit; ++i)

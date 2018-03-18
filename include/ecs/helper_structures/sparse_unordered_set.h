@@ -98,11 +98,11 @@ namespace ecs
 		void
 		emplace_at(cpprelude::usize index, TArgs&&... args)
 		{
-			if (_sparse.count() <= index)
-			{
-				if(_sparse.capacity() <= index)
-					_sparse.reserve(2 * (index + 1));
-				
+			if (_sparse.capacity() <= index)
+				_sparse.reserve(2 * (index + 1));
+			
+			if (_sparse[index] == INVALID_PLACE)
+			{				
 				_sparse[index] = _dense.count();
 				++_sparse._count;
 				_dense.emplace_back(std::make_pair(std::forward<TArgs>(args)..., index));
@@ -115,13 +115,13 @@ namespace ecs
 		void
 		insert_at(cpprelude::usize index, T&& value)
 		{
-			if (_sparse.count() <= index)
-			{
-				if (_sparse.capacity() <= index)
-					_sparse.reserve(2 * (index + 1));
+		
+			if (_sparse.capacity() <= index)
+				_sparse.expand_back(2 * (index + 1), INVALID_PLACE);
 
+			if (_sparse[index] == INVALID_PLACE)
+			{
 				_sparse[index] = _dense.count();
-				++_sparse._count;
 				_dense.emplace_back(std::make_pair(std::move(value), index));
 			}
 			else
@@ -132,13 +132,12 @@ namespace ecs
 		void
 		insert_at(cpprelude::usize index, const T& value)
 		{
-			if (_sparse.count() <= index)
+			if (_sparse.capacity() <= index)
+				_sparse.expand_back(2 * (index + 1), INVALID_PLACE);
+			
+			if (_sparse[index] == INVALID_PLACE)
 			{
-				if (_sparse.capacity() <= index)
-					_sparse.reserve(2 * (index + 1));
-
 				_sparse[index] = _dense.count();
-				++_sparse._count;
 				_dense.emplace_back(std::make_pair(value, index));
 			}
 			else
@@ -431,6 +430,10 @@ namespace ecs
 		component_pool(cpprelude::memory_context* context)
 			:_context(context),
 			components(context)
+		{}
+
+		component_pool()
+			:_context(nullptr)
 		{}
 	};
 }

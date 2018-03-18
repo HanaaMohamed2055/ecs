@@ -19,14 +19,14 @@ namespace ecs
 	{
 		if (entity_alive(e))
 		{
-			return entity_components_view(component_types, e.id());
+			return entity_components_view(component_pools, e.id());
 		}
 	}
 
 	generic_component_view
 	World::get_all_world_components()
 	{
-		return generic_component_view(component_types);
+		return generic_component_view(component_pools);
 	}
 
 	sparse_unordered_set<Entity>&
@@ -47,7 +47,7 @@ namespace ecs
 		entity_set.remove(entity_id);
 
 		// remove the entity components
-		for (auto& pool : component_types)
+		for (auto& pool : component_pools)
 		{
 			auto& components = pool.components;
 			if (components.has(entity_id))
@@ -62,6 +62,30 @@ namespace ecs
 		}
 	}
 
+	void
+	World::kill_entity(ID entity_id)
+	{
+		if (!entity_set.has(entity_id))
+			return;
+		
+		// remove the entity
+		entity_set.remove(entity_id.id());
+
+		// remove the entity components
+		for (auto& pool : component_pools)
+		{
+			auto& components = pool.components;
+			if (components.has(entity_id.id()))
+			{
+				auto& component = components[entity_id.id()];
+
+				if (component.managed)
+					pool.utils->free(component.data, pool._context);
+
+				components.remove(entity_id.id());
+			}
+		}
+	}
 
 	//void
 	//World::clean_up()

@@ -185,7 +185,7 @@ namespace ecs
 		get(Entity e)
 		{	
 			auto type = utility::get_type_identifier<T>();
-			auto pool = component_types[type].components;
+			auto pool = component_pools[type].components;
 			return *((T*)pool[e.id()].data);
 		}
 

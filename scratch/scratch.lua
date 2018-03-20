@@ -11,10 +11,12 @@ project "scratch"
 	includedirs {
 		ecs_path .. "/include",
 		cpprelude_path .. "/include",
-		entt_path .. "/src"
+		entt_path .. "/src",
+		math_path .. "/include",
+		pixel_toaster_path .. "/include"
 	}
 
-	links {"cpprelude", "ecs"}
+	links {"cpprelude", "ecs", "pixeltoaster"}
 
 	if os.istarget("linux") then
 

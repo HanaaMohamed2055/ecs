@@ -12,6 +12,8 @@ bin_path = path.getabsolute("bin")
 build_path = path.getabsolute("build")
 ecs_path = path.getabsolute(".")
 cpprelude_path = path.getabsolute("deps/cpprelude/cpprelude")
+math_path = path.getabsolute("deps/math/")
+pixel_toaster_path = path.getabsolute("deps/pixeltoaster")
 
 workspace "ecs"
 	configurations {"debug", "release"}
@@ -22,4 +24,6 @@ workspace "ecs"
 	include "ecs.lua"
 	include "scratch/scratch.lua"
 	include (cpprelude_path .. "/cpprelude.lua")
+	include (math_path .. "/math.lua")
+	include (pixel_toaster_path .. "/PixelToaster.lua")
 	include "unittest/unittest.lua"

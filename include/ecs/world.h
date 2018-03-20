@@ -25,8 +25,42 @@ namespace ecs
 			component_pools(context)
 		{} 
 				
-		API_ECS Entity
-		create_entity();
+		template<typename T, typename ... TArgs>
+		Entity
+		create_entity(TArgs&& ... args)
+		{
+			ID entity = entity_set.insert_one_more();
+			add_property<T, TArgs...>(entity, std::forward<TArgs>(args)...);
+			return Entity(entity, this);
+		}
+
+		template<typename T>
+		Entity
+		create_entity(const T& value)
+		{
+			ID entity = entity_set.insert_one_more();
+			add_property<T>(entity, value);
+			return Entity(entity, this);
+		}
+
+		template<typename T>
+		Entity
+		create_entity(T* value)
+		{
+			ID entity = entity_set.insert_one_more();
+			add_property<T>(entity, value);
+			return Entity(entity, this);
+		}
+
+		template<typename T, typename ... TArgs>
+		Entity
+		create_entity()
+		{
+			ID entity = entity_set.insert_one_more();
+			add_property<T, TArgs...>(entity, std::forward<TArgs>(args)...);
+			return Entity(entity, this);
+		}
+
 
 		template<typename T>
 		component_pool&
@@ -55,10 +89,7 @@ namespace ecs
 			entity.entity_id = entity_id;
 			entity.world = this;
 		}
-
-		API_ECS bool
-		entity_alive(Entity entity);
-		
+						
 		template<typename T, typename ... TArgs>
 		T&
 		add_property(Entity e, TArgs&& ... args)
@@ -264,8 +295,6 @@ namespace ecs
 			return *((T*)pool[internal_entity.id()].data);
 		}
 
-		//TODO: this function needs to be modified 
-		// to provide support for multi-component views
 		template<typename T>
 		component_view<T>
 		get_world_components()
@@ -273,6 +302,12 @@ namespace ecs
 			return component_view<T>(get_pool<T>());
 		}
 			
+		API_ECS Entity
+		create_entity();
+		
+		API_ECS bool
+		entity_alive(Entity entity);
+
 		API_ECS entity_components_view
 		get_all_entity_properties(Entity e);
 

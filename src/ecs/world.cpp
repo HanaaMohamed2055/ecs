@@ -104,8 +104,8 @@ namespace ecs
 		{
 			for (auto component : pool.components)
 			{
-				if (component.first.managed)
-					pool.utils->free(component.first.data, pool._context);
+				if (component.managed)
+					pool.utils->free(component.data, pool._context);
 			}
 			
 		}

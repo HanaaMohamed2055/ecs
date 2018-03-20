@@ -5,6 +5,7 @@
 #include <symbyo/math/vector_ops.h>
 #include <ecs/world.h>
 #include <PixelToaster.h>
+#include <pmmintrin.h>
 
 using namespace std;
 using namespace ecs;

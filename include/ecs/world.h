@@ -63,14 +63,34 @@ namespace ecs
 		T&
 		add_property(Entity e, TArgs&& ... args)
 		{
-			return add_property<T, TArgs...>(e, _context, std::forward<TArgs>(args)...);
+			if (e.world == this)
+			{
+				return add_property<T, TArgs...>(e.entity_id, _context, std::forward<TArgs>(args)...);
+			}
 		}
 
 		template<typename T, typename ... TArgs>
 		T&
 		add_property(Entity e, cpprelude::memory_context* context, TArgs&& ... args)
 		{
-			if (entity_alive(e))
+			if (e.world == this)
+			{
+				return add_property<T, TArgs...>(e.entity_id, context, std::forward<TArgs>(args)...);
+			}
+		}
+
+		template<typename T, typename ... TArgs>
+		T&
+		add_property(ID internal_entity, TArgs&& ... args)
+		{
+			return add_property<T, TArgs...>(internal_entity, _context, std::forward<TArgs>(args)...);
+		}
+
+		template<typename T, typename ... TArgs>
+		T&
+		add_property(ID internal_entity, cpprelude::memory_context* context, TArgs&& ... args)
+		{
+			if (entity_set.has(internal_entity))
 			{
 				auto& pool = get_pool<T>(context);
 
@@ -78,28 +98,48 @@ namespace ecs
 				Internal_Component component;
 				component.data = pool._context->alloc<T>();
 				new (component.data) T(std::forward<TArgs>(args)...);
-				component.entity_id = e.entity_id;
+				component.entity_id = internal_entity;
 				component.managed = true;
-			
+
 				// registering component with the world and the entity 
-				pool.components.insert_at(e.id(), component);
+				pool.components.insert_at(internal_entity.id(), component);
 
 				return *(static_cast<T*>(component.data));
 			}
 		}
-				
+
 		template<typename T>
 		T&
 		add_property(Entity e, const T& value)
 		{
-			return add_property<T>(e, _context, value);
+			if (e.world == this)
+			{
+				return add_property<T>(e.entity_id, _context, value);
+			}
 		}
 		
 		template<typename T>
 		T&
 		add_property(Entity e, cpprelude::memory_context* context, const T& value)
 		{
-			if (entity_alive(e))
+			if (e.world == this)
+			{
+				return add_property<T>(e.entity_id, context, value);
+			}
+		}
+
+		template<typename T>
+		T&
+		add_property(ID internal_entity, const T& value)
+		{
+			return add_property<T>(internal_entity, _context, value);
+		}
+
+		template<typename T>
+		T&
+		add_property(ID internal_entity, cpprelude::memory_context* context, const T& value)
+		{
+			if (entity_set.has(internal_entity))
 			{
 				auto& pool = get_pool<T>(context);
 
@@ -107,32 +147,42 @@ namespace ecs
 				Internal_Component component;
 				component.data = pool._context->alloc<T>();
 				new (component.data) T(value);
-				component.entity_id = e.entity_id;
+				component.entity_id = internal_entity;
 				component.managed = true;
 
 				// registering component with the world and the entity 
-				pool.components.insert_at(e.id(), component);
+				pool.components.insert_at(internal_entity.id(), component);
 
 				return *(static_cast<T*>(component.data));
 			}
 		}
-		
+
 		template<typename T>
 		void
 		add_property(Entity e, T* data)
 		{
-			if (entity_alive(e))
+			if (e.world == this)
+			{
+				return add_property<T>(e.entity_id, data);
+			}
+		}
+
+		template<typename T>
+		void
+		add_property(ID internal_entity, T* data)
+		{
+			if (entity_set.has(internal_entity))
 			{
 				auto& pool = get_pool<T>();
 
 				// constructing component itself/////
 				Internal_Component component;
 				component.data = data;
-				component.entity_id = e.entity_id;
+				component.entity_id = internal_entity;
 				component.managed = true;
 
 				// registering component with the world and the entity 
-				pool.components.insert_at(e.id(), component);
+				pool.components.insert_at(internal_entity.id(), component);
 
 				return *(static_cast<T*>(component.data));
 			}

@@ -219,22 +219,18 @@ namespace ecs
 			return _component_it->first.entity_id;
 		}
 
-		std::pair<ID, value_type&>
+		value_type&
 		operator*()
 		{
-			auto entity = _component_it->first.entity_id;
 			auto component = _component_it->first;
-			auto& data = *(static_cast<value_type*>(component.data));
-			return std::pair<ID, value_type&>(entity, data);
+			return *(static_cast<value_type*>(component.data));
 		}
 
-		std::pair<ID, const value_type&>
+		const value_type
 		operator*() const
 		{
-			auto entity = _component_it->first.entity_id;
 			auto component = _component_it->first;
-			auto& data = *(static_cast<value_type*>(component.data));
-			return std::pair<ID, const value_type&>(entity, data);
+			return *(static_cast<value_type*>(component.data));
 		}
 	};
 

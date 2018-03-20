@@ -9,7 +9,7 @@ namespace ecs
 {
 	struct generic_component_iterator
 	{
-		using component_iterator = cpprelude::sequential_iterator<std::pair<Internal_Component, cpprelude::usize>>;
+		using component_iterator = cpprelude::sequential_iterator<Internal_Component>;
 		
 		using iterator_category = std::forward_iterator_tag;
 		using value_type = Internal_Component;
@@ -106,28 +106,34 @@ namespace ecs
 			return !operator==(other);
 		}
 
+		ID
+		entity()
+		{
+			return _component_it->entity_id;
+		}
+
 		value_type&
 		value()
 		{
-			return _component_it->first;
+			return *_component_it;
 		}
 
 		const value_type&
 		value() const
 		{
-			return _component_it->first;
+			return *_component_it;
 		}
 		
 		value_type&
 		operator*()
 		{
-			return _component_it->first;
+			return *_component_it;
 		}
 
 		const value_type&
 		operator*() const
 		{
-			return _component_it->first;
+			return *_component_it;
 		}
 
 		const char*
@@ -135,13 +141,14 @@ namespace ecs
 		{
 			return _pool_it->utils->type;
 		}
+				
 	};
 
 	
 	template<typename T>
 	struct component_iterator
 	{
-		using component_set_iterator = cpprelude::sequential_iterator<std::pair<Internal_Component, cpprelude::usize>>;
+		using component_set_iterator = cpprelude::sequential_iterator<Internal_Component>;
 
 		using iterator_category = std::forward_iterator_tag;
 		using value_type = T;
@@ -189,47 +196,43 @@ namespace ecs
 		value_type&
 		data()
 		{
-			auto component = _component_it->first;
-			return *(static_cast<value_type*>(component.data));
+			return *(static_cast<value_type*>(_component_it->data));
 		}
 
 		const value_type&
 		data() const
-		{
-			auto component = _component_it->first;
-			return *(static_cast<value_type*>(component.data));
+		{			
+			return *(static_cast<value_type*>(_component_it->data));
 		}
 
 		Internal_Component&
 		value()
 		{
-			return _component_it->first;
+			return *_component_it;
 		}
 
-		_id_type
+		ID
 		entity()
 		{
-			return _component_it->first.entity_id;
+			return _component_it->entity_id;
 		}
 
 		value_type&
 		operator*()
 		{
-			auto component = _component_it->first;
-			return *(static_cast<value_type*>(component.data));
+			return *(static_cast<value_type*>(_component_it->data));
 		}
 
-		const value_type&
+		const value_type
 		operator*() const
 		{
-			auto component = _component_it->first;
-			return *(static_cast<value_type*>(component.data));
+			return *(static_cast<value_type*>(_component_it->data));
 		}
 	};
 
 	struct entity_components_iterator
 	{
-		using component_iterator = cpprelude::sequential_iterator<std::pair<Internal_Component, cpprelude::usize>>;
+		using component_iterator = cpprelude::sequential_iterator<Internal_Component>;
 
 		using iterator_category = std::forward_iterator_tag;
 		using value_type = Internal_Component;
@@ -392,22 +395,23 @@ namespace ecs
 	{
 		using iterator = component_iterator<T>;
 
-		sparse_unordered_set<Internal_Component>& _components;
+		component_pool& _pool;
 
-		component_view(sparse_unordered_set<Internal_Component>& components)
-			:_components(components)
+		component_view(component_pool& pool)
+			:_pool(pool)
 		{}
 
 		iterator
 		begin()
 		{
-			return iterator(_components.begin());
+			return iterator(_pool.components.begin());
 		}
 
 		iterator
 		end()
 		{
-			return iterator(_components.end());
+			return iterator(_pool.components.end());
 		}
 	};
+
 }

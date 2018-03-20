@@ -92,7 +92,7 @@ create_ecs_small_entities(workbench* bench, cpprelude::usize limit)
 	bench->watch.start();
 	
 	for (usize i = 0; i < limit; ++i)
-		world.add_property<Position>(world.create_entity());
+		world.create_entity<Position>();
 	
 	bench->watch.stop();
 }
@@ -136,31 +136,35 @@ iterate_entt_small_entities(workbench* bench, entt::DefaultRegistry* registry)
 }
 
 void
-destroy_ecs_small_entities(workbench* bench, ecs::World* w)
+destroy_ecs_small_entities(workbench* bench, cpprelude::usize limit)
 {
-	//bench->watch.start();
+	ecs::World world;
+		
+	bench->watch.start();
 
-	//auto view = w->get_all_world_entities();
-
-	//for (auto entity: view)
+	//auto view = world.get_world_components<Position>();
+	//int count = 0;
+	//ecs::component_iterator<Position> it = view.begin();
+	//for (; it != view.end(); ++it)
 	//{
-	//	w->kill_entity(entity);
+	//	world.kill_entity(it.entity());
 	//}
 
-	//bench->watch.stop();
+	bench->watch.stop();
 }
 
 void
-destroy_entt_small_entities(workbench* bench, entt::DefaultRegistry* registry)
+destroy_entt_small_entities(workbench* bench, cpprelude::usize limit)
 {
-	bench->watch.start();
-
-	auto view = registry->view<Position>();
 	
-	for (auto entity : view)
-	{
-		registry->destroy(entity);
-	}
+	//bench->watch.start();
+	//
+	//auto view = registry.view<Position>();
+	//
+	//for (auto entity : view)
+	//{
+	//	registry.destroy(entity);
+	//}
 
 	bench->watch.stop();
 }
@@ -180,26 +184,20 @@ benchmark()
 	CPPRELUDE_BENCHMARK(create_ecs_small_entities, limit)
 	});
 	
-	compare_benchmark(std::cout, {
-		CPPRELUDE_BENCHMARK(destroy_entt_entities, limit),
-		CPPRELUDE_BENCHMARK(destroy_ecs_entities, limit)
-	});
-
-	//ecs::World world;
-	//for (usize i = 0; i < limit; ++i)
-	//	w.add_property<Position>(world.create_entity(), Position());
-	//	
-	//entt::DefaultRegistry _registry;
-	//for (usize i = 0; i < limit; ++i)
-	//	registry.create<Position>();
+	/*compare_benchmark(std::cout, {
+		CPPRELUDE_BENCHMARK(destroy_entt_entities, &Registry),
+		CPPRELUDE_BENCHMARK(destroy_ecs_entities, &world)
+	});*/
 
 	//compare_benchmark(std::cout, {
 	//CPPRELUDE_BENCHMARK(iterate_entt_small_entities, &_registry),
 	//CPPRELUDE_BENCHMARK(iterate_ecs_small_entities, &world)
 	//});
 
-	//compare_benchmark(std::cout, {
-	//CPPRELUDE_BENCHMARK(destroy_entt_small_entities, &_registry),
-	//CPPRELUDE_BENCHMARK(destroy_ecs_small_entities, limit)
-	//});
+
+	/*compare_benchmark(std::cout, {
+		CPPRELUDE_BENCHMARK(destroy_entt_small_entities, limit),
+		CPPRELUDE_BENCHMARK(destroy_ecs_small_entities, limit)
+	});*/
+	
 }

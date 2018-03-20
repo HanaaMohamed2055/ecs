@@ -19,17 +19,19 @@ namespace ecs
 	template<typename T>
 	struct sparse_unordered_set
 	{	
-		using iterator = cpprelude::sequential_iterator<std::pair<T, cpprelude::usize>>;
-		using const_iterator = cpprelude::sequential_iterator<std::pair<const T, cpprelude::usize>>;
+		using iterator = cpprelude::sequential_iterator<T>;
+		using const_iterator = cpprelude::sequential_iterator<T>;
 				
-		cpprelude::dynamic_array <std::pair <T, cpprelude::usize>> _dense;
+		cpprelude::dynamic_array <T> _dense;
 		cpprelude::dynamic_array<cpprelude::usize> _sparse;
+		cpprelude::dynamic_array<cpprelude::usize> _dense_sparse_map;
 		cpprelude::usize next;
 		cpprelude::usize recycle_count = 0;
 
 		sparse_unordered_set(cpprelude::memory_context* context = cpprelude::platform->global_memory)
 			:_dense(context),
-			_sparse(context)
+			_sparse(context),
+			_dense_sparse_map(context)
 		{}
 								
 	/*	template<typename ... TArgs>
@@ -99,16 +101,16 @@ namespace ecs
 		emplace_at(cpprelude::usize index, TArgs&&... args)
 		{
 			if (_sparse.capacity() <= index)
-				_sparse.reserve(2 * (index + 1));
+				_sparse.expand_back(2 * (index + 1), INVALID_PLACE);
 			
 			if (_sparse[index] == INVALID_PLACE)
 			{				
 				_sparse[index] = _dense.count();
-				++_sparse._count;
-				_dense.emplace_back(std::make_pair(std::forward<TArgs>(args)..., index));
+				_dense.emplace_back(std::forward<TArgs>(args)...);
+				_dense_sparse_map.insert_back(index)
 			}
 			else
-				_dense[_sparse[index]].first = T(std::forward<TArgs>(args)...);
+				_dense[_sparse[index]] = T(std::forward<TArgs>(args)...);
 		}
 				
 		template<typename T>
@@ -122,10 +124,11 @@ namespace ecs
 			if (_sparse[index] == INVALID_PLACE)
 			{
 				_sparse[index] = _dense.count();
-				_dense.emplace_back(std::make_pair(std::move(value), index));
+				_dense.emplace_back(value);
+				_dense_sparse_map.insert_back(index);
 			}
 			else
-				_dense[_sparse[index]].first = T(std::move(value));
+				_dense[_sparse[index]] = T(std::move(value));
 		}
 
 		template<typename T>
@@ -138,10 +141,11 @@ namespace ecs
 			if (_sparse[index] == INVALID_PLACE)
 			{
 				_sparse[index] = _dense.count();
-				_dense.emplace_back(std::make_pair(value, index));
+				_dense.emplace_back(value);
+				_dense_sparse_map.insert_back(index);
 			}
 			else
-				_dense[_sparse[index]].first = T(std::move(value));
+				_dense[_sparse[index]] = T(std::move(value));
 		}
 
 		bool
@@ -151,7 +155,7 @@ namespace ecs
 				index < _sparse.count()
 				&& _sparse[index] < _dense.count() 
 				&& _sparse[index] != INVALID_PLACE
-				&& _dense[_sparse[index]].second == index ;
+				&& _dense_sparse_map[_sparse[index]] == index ;
 		}
 
 		void
@@ -160,11 +164,13 @@ namespace ecs
 			cpprelude::usize dense_index = _sparse[sparse_index];
 			
 			std::swap(_dense[dense_index], _dense[_dense.count() - 1]);
-			_sparse[_dense[dense_index].second] = dense_index;
+			std::swap(_dense_sparse_map[dense_index], _dense_sparse_map[_dense.count() - 1]);
+			_sparse[_dense_sparse_map[dense_index]] = dense_index;
 			
 			_sparse[sparse_index] = INVALID_PLACE;
 			_dense.remove_back();
-			
+			_dense_sparse_map.remove_back();
+
 			if (recycle_count > 0)
 				_sparse[sparse_index] = next;
 			next = sparse_index;
@@ -175,25 +181,25 @@ namespace ecs
 		T&
 		operator[](cpprelude::usize sparse_index)
 		{
-			return _dense[_sparse[sparse_index]].first;
+			return _dense[_sparse[sparse_index]];
 		}
 
 		const T&
 		operator[](cpprelude::usize sparse_index) const
 		{
-			return _dense[_sparse[sparse_index]].first;
+			return _dense[_sparse[sparse_index]];
 		}
 
 		T&
 		at(cpprelude::usize sparse_index)
 		{
-			return _dense[_sparse[sparse_index]].first;
+			return _dense[_sparse[sparse_index]];
 		}
 
 		const T&
 		at(cpprelude::usize sparse_index) const
 		{
-			return _dense[_sparse[sparse_index]].first;
+			return _dense[_sparse[sparse_index]];
 		}
 		
 		cpprelude::usize
@@ -224,6 +230,7 @@ namespace ecs
 		reserve(cpprelude::usize expected_size)
 		{
 			_dense.reserve(expected_size);
+			_dense_sparse_map.reserve(expected_size);
 			_sparse.reserve(expected_size);
 		}
 
@@ -316,7 +323,7 @@ namespace ecs
 		bool
 		has(ID entity)
 		{
-			return _sparse[entity.id()].version() == entity.version() && _sparse[entity.id()].id() < _dense.count();
+			return _dense[entity.id()].number == entity.number;
 		}
 
 		void

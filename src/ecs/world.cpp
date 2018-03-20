@@ -23,6 +23,15 @@ namespace ecs
 		}
 	}
 
+	entity_components_view
+	World::get_all_entity_properties(ID internal_entity)
+	{
+		if (entity_set.has(internal_entity))
+		{
+			return entity_components_view(component_pools, internal_entity.id());
+		}
+	}
+
 	generic_component_view
 	World::get_all_world_components()
 	{
@@ -63,38 +72,42 @@ namespace ecs
 	}
 
 	void
-	World::kill_entity(ID entity_id)
+	World::kill_entity(ID internal_entity)
 	{
-		if (!entity_set.has(entity_id))
+		if (!entity_set.has(internal_entity))
 			return;
 		
 		// remove the entity
-		entity_set.remove(entity_id.id());
+		entity_set.remove(internal_entity.id());
 
 		// remove the entity components
 		for (auto& pool : component_pools)
 		{
 			auto& components = pool.components;
-			if (components.has(entity_id.id()))
+			if (components.has(internal_entity.id()))
 			{
-				auto& component = components[entity_id.id()];
+				auto& component = components[internal_entity.id()];
 
 				if (component.managed)
 					pool.utils->free(component.data, pool._context);
 
-				components.remove(entity_id.id());
+				components.remove(internal_entity.id());
 			}
 		}
 	}
 
-	//void
-	//World::clean_up()
-	//{
-	//	 //deallocate only the memory allocated by the ecs 
-	//	for (auto& component: component_set)
-	//	{
-	//		if (component.dynamically_allocated)
-	//			component.utils->free(component.data, _context);
-	//	}
-	//}
+	void
+	World::clean_up()
+	{
+		 //deallocate only the memory allocated by the ecs 
+		for (auto& pool: component_pools)
+		{
+			for (auto component : pool.components)
+			{
+				if (component.managed)
+					pool.utils->free(component.data, pool._context);
+			}
+			
+		}
+	}
 }

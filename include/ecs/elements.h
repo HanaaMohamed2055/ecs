@@ -99,7 +99,7 @@ namespace ecs
 	struct Internal_Component
 	{
 		void* data = nullptr;
-		_id_type entity_id;
+		ID entity_id;
 		bool managed = false;
 	};
 

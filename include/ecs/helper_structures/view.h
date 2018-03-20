@@ -106,6 +106,12 @@ namespace ecs
 			return !operator==(other);
 		}
 
+		ID
+		entity()
+		{
+			return _component_it->first.entity_id;
+		}
+
 		value_type&
 		value()
 		{
@@ -135,6 +141,7 @@ namespace ecs
 		{
 			return _pool_it->utils->type;
 		}
+				
 	};
 
 	
@@ -206,24 +213,28 @@ namespace ecs
 			return _component_it->first;
 		}
 
-		_id_type
+		ID
 		entity()
 		{
 			return _component_it->first.entity_id;
 		}
 
-		value_type&
+		std::pair<ID, value_type&>
 		operator*()
 		{
+			auto entity = _component_it->first.entity_id;
 			auto component = _component_it->first;
-			return *(static_cast<value_type*>(component.data));
+			auto& data = *(static_cast<value_type*>(component.data));
+			return std::pair<ID, value_type&>(entity, data);
 		}
 
-		const value_type&
+		std::pair<ID, const value_type&>
 		operator*() const
 		{
+			auto entity = _component_it->first.entity_id;
 			auto component = _component_it->first;
-			return *(static_cast<value_type*>(component.data));
+			auto& data = *(static_cast<value_type*>(component.data));
+			return std::pair<ID, const value_type&>(entity, data);
 		}
 	};
 
@@ -392,22 +403,23 @@ namespace ecs
 	{
 		using iterator = component_iterator<T>;
 
-		sparse_unordered_set<Internal_Component>& _components;
+		component_pool& _pool;
 
-		component_view(sparse_unordered_set<Internal_Component>& components)
-			:_components(components)
+		component_view(component_pool& pool)
+			:_pool(pool)
 		{}
 
 		iterator
 		begin()
 		{
-			return iterator(_components.begin());
+			return iterator(_pool.components.begin());
 		}
 
 		iterator
 		end()
 		{
-			return iterator(_components.end());
+			return iterator(_pool.components.end());
 		}
 	};
+
 }

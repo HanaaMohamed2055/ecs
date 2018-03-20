@@ -10,7 +10,7 @@
 #define PREALLOCATED 1024
 
 namespace ecs
-{	
+{		
 	struct World
 	{
 		using entity_components = cpprelude::dynamic_array<cpprelude::dynamic_array <std::pair<cpprelude::usize, cpprelude::usize>>> ;
@@ -23,14 +23,14 @@ namespace ecs
 			:_context(context),
 			entity_set(context),
 			component_pools(context)
-		{}
+		{} 
 				
 		API_ECS Entity
 		create_entity();
 
 		template<typename T>
 		component_pool&
-			get_pool(cpprelude::memory_context* context = cpprelude::platform->global_memory)
+		get_pool(cpprelude::memory_context* context = cpprelude::platform->global_memory)
 		{
 			cpprelude::usize type = utility::get_type_identifier<T>();
 			
@@ -46,8 +46,7 @@ namespace ecs
 			
 			return component_pools[type];
 		}
-
-
+		
 		template<typename T>
 		void
 		add_entity(T& entity)
@@ -60,13 +59,6 @@ namespace ecs
 		API_ECS bool
 		entity_alive(Entity entity);
 		
-		template<typename T, typename ... TArgs>
-		Entity
-		create_entity()
-		{
-
-		}
-
 		template<typename T, typename ... TArgs>
 		T&
 		add_property(Entity e, TArgs&& ... args)
@@ -86,7 +78,7 @@ namespace ecs
 				Internal_Component component;
 				component.data = pool._context->alloc<T>();
 				new (component.data) T(std::forward<TArgs>(args)...);
-				component.entity_id = e.id();
+				component.entity_id = e.entity_id;
 				component.managed = true;
 			
 				// registering component with the world and the entity 
@@ -115,7 +107,7 @@ namespace ecs
 				Internal_Component component;
 				component.data = pool._context->alloc<T>();
 				new (component.data) T(value);
-				component.entity_id = e.id();
+				component.entity_id = e.entity_id;
 				component.managed = true;
 
 				// registering component with the world and the entity 
@@ -136,7 +128,7 @@ namespace ecs
 				// constructing component itself/////
 				Internal_Component component;
 				component.data = data;
-				component.entity_id = e.id();
+				component.entity_id = e.entity_id;
 				component.managed = true;
 
 				// registering component with the world and the entity 
@@ -166,7 +158,20 @@ namespace ecs
 			
 			return pool.has(e.id());
 		}
-						
+
+		template<typename T>
+		bool
+		has(ID internal_entity)
+		{
+			if (!entity_set.has(internal_entity) || !type_exists<T>())
+				return false;
+
+			auto type = utility::get_type_identifier<T>();
+			auto pool = component_pools[type].components;
+
+			return pool.has(internal_entity.id());
+		}
+
 		template<typename T>
 		void
 		remove_property(Entity e)
@@ -176,30 +181,54 @@ namespace ecs
 
 			auto type = utility::get_type_identifier<T>();
 			auto& pool = component_types[type].components;
-			auto entity_id = e.id();
-			pool.remove(entity_id);
+			pool.remove(e.id());
 		}
-				
+
+		template<typename T>
+		void
+		remove_property(ID internal_entity)
+		{
+			if (!entity_set.has(internal_entity) || !type_exists<T>() || !has<T>(e))
+				return;
+
+			auto type = utility::get_type_identifier<T>();
+			auto& pool = component_types[type].components;
+			pool.remove(internal_entity.id());
+		}
+
 		template<typename T> 
 		T& 
 		get(Entity e)
 		{	
 			auto type = utility::get_type_identifier<T>();
-			auto pool = component_types[type].components;
+			auto pool = component_pools[type].components;
 			return *((T*)pool[e.id()].data);
 		}
 
 		template<typename T>
+		T&
+		get(ID internal_entity)
+		{
+			auto type = utility::get_type_identifier<T>();
+			auto pool = component_pools[type].components;
+			return *((T*)pool[internal_entity.id()].data);
+		}
+
+		//TODO: this function needs to be modified 
+		// to provide support for multi-component views
+		template<typename T>
 		component_view<T>
 		get_world_components()
 		{
-			auto& components = get_pool<T>().components;
-			return component_view<T>(components);
+			return component_view<T>(get_pool<T>());
 		}
-
+			
 		API_ECS entity_components_view
 		get_all_entity_properties(Entity e);
-		
+
+		API_ECS entity_components_view
+		get_all_entity_properties(ID internal_entity);
+
 		API_ECS generic_component_view
 		get_all_world_components();
 				
@@ -210,10 +239,10 @@ namespace ecs
 		kill_entity(Entity e);
 
 		API_ECS void
-		kill_entity(ID entity_id);
+		kill_entity(ID internal_entity);
 
-		//API_ECS void
-		//clean_up();
+		API_ECS void
+		clean_up();
 		
 		~World()
 		{

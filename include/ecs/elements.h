@@ -28,7 +28,11 @@ namespace ecs
 		ID()
 		{}
 
-		ID(cpprelude::u64 entity_id, cpprelude::u64 version = 0)
+		ID(cpprelude::u64 value)
+			:number(value)
+		{}
+
+		ID(cpprelude::u64 entity_id, cpprelude::u64 version)
 		{
 			number = (entity_id & entity_mask) | ((version & version_mask) << 40);
 		}

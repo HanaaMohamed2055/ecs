@@ -283,7 +283,7 @@ namespace ecs
 		using const_iterator = cpprelude::sequential_iterator<const ID>;
 
 		cpprelude::dynamic_array<ID> _dense;
-		cpprelude::dynamic_array<ID> _sparse;
+		cpprelude::dynamic_array<cpprelude::usize> _sparse;
 		cpprelude::usize recycle_count = 0;
 		ID next;
 
@@ -301,59 +301,64 @@ namespace ecs
 				_dense.insert_back(next);
 				auto entity_id = next;
 				next = _sparse[next.id()];
-				_sparse[entity_id.id()] = ID(_dense.count() - 1, entity_id.version());
+				_sparse[entity_id.id()] = _dense.count() - 1;
 				--recycle_count;
 				return entity_id;
 			}
 			else
 			{
-				_dense.insert_back(ID{ _dense.count() });
-				_sparse.insert_back(ID{ _dense.count() - 1 });
+				_dense.insert_back(_sparse.count());
+				_sparse.insert_back(_dense.count() - 1);
 				return _sparse.count() - 1;
 			}
 		}
-
+		
+		// asks if it has an entity at the requested index
 		bool
 		has(cpprelude::usize sparse_index)
 		{
-			return _sparse[sparse_index].id() < _dense.count()
-				&& _dense[_sparse[sparse_index].id()].id() == sparse_index;
+			return sparse_index < _sparse.count() 
+				&&_sparse[sparse_index] < _dense.count()
+				&& _dense[_sparse[sparse_index]].id() == sparse_index;
 		}
 
+		// asks if it has the specified entity
 		bool
 		has(ID entity)
 		{
-			return _dense[entity.id()].number == entity.number;
+			return entity.id() < _sparse.count()
+				&& _sparse[entity.id()] < _dense.count()
+				&& _dense[_sparse[entity.id()]].number == entity.number;
 		}
 
 		void
 		remove(cpprelude::usize sparse_index)
 		{
-			cpprelude::usize dense_index = _sparse[sparse_index].id();
+			cpprelude::usize dense_index = _sparse[sparse_index];
 
 			std::swap(_dense[dense_index], _dense[_dense.count() - 1]);
-			_sparse[_dense[dense_index].id()] = ID{dense_index};
+			_sparse[_dense[dense_index].id()] = dense_index;
 			_dense.remove_back();
 
 			ID temp = next;
 			next = _sparse[sparse_index];
 			next.increment_version();
 			if (recycle_count)
-				_sparse[sparse_index] = temp;
-					
+				_sparse[sparse_index] = temp.number;
+						
 			++recycle_count;
 		}
 
 		ID&
 		operator[](cpprelude::usize sparse_index)
 		{
-			return _dense[_sparse[sparse_index].id()];
+			return _dense[_sparse[sparse_index]];
 		}
 
 		const ID&
 		operator[](cpprelude::usize sparse_index) const
 		{
-			return _dense[_sparse[sparse_index].id()];
+			return _dense[_sparse[sparse_index]];
 		}
 
 		cpprelude::usize

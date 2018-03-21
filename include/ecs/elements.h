@@ -118,6 +118,18 @@ namespace ecs
 		{
 			return data;
 		}
+
+		T&
+		operator*()
+		{
+			return *data;
+		}
+
+		const T&
+		operator*() const
+		{
+			return *data;
+		}
 	};
 
 	

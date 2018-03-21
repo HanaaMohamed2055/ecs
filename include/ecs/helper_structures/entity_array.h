@@ -125,10 +125,12 @@ namespace ecs
 		{
 			if (recycle_count)
 			{
+				auto reused = next;
 				auto temp = _entity_index[next.id()];
 				_entity_index[next.id()] = next;
 				next = temp;
 				--recycle_count;
+				return reused;
 			}
 			else
 			{

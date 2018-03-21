@@ -55,7 +55,7 @@ namespace ecs
 				}
 				components[entity_index] = nullptr;
 				cpprelude::usize dense_index = sparse[entity_index];
-				std::swap(dense[dense_index], dense[dense.count()]);
+				std::swap(dense[dense_index], dense[dense.count() - 1]);
 				sparse[dense[dense_index]] = dense_index;
 				sparse[entity_index] = -1;
 				dense.remove_back();

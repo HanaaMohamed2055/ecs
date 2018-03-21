@@ -10,7 +10,21 @@
 int main()
 {
 	benchmark();
+	/*ecs::World world;
+	for (auto i = 0; i < 10; ++i)
+		world.create_entity<Position>(i + 1, i + 2);
 	
+	auto& entities = world.get_all_world_entities();
+	auto i = 2.43;
+	for (auto e : entities)
+	{
+		world.add_property<r32>(e, i++);
+	}
+		
+
+	auto view = world.get_world_components<Position>();
+	for (auto c : view)
+		std::cout << world.get_related_component<r32>(c) << std::endl;*/
 }
 
 //benchmark();

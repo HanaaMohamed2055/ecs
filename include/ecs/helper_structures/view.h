@@ -276,18 +276,18 @@ namespace ecs
 			return *_dense_it;
 		}
 
-		value_type&
+		Component<T>
 		operator*()
 		{
-			void* data = _pool.components[*_dense_it];
-			return *(static_cast<value_type*>(data));
+			T* data = static_cast<value_type*>(_pool.components[*_dense_it]);
+			return Component<T>(data, *_dense_it);
 		}
 
-		const value_type&
+		Component<const T>&
 		operator*() const
 		{
-			void* data = _pool.components[*_dense_it];
-			return *(static_cast<value_type*>(data));
+			T* data = static_cast<value_type*>(_pool.components[*_dense_it]);
+			return Component<T>(data, *_dense_it);
 		}
 
 		value_type*

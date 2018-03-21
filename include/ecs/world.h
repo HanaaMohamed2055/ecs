@@ -270,16 +270,14 @@ namespace ecs
 			return *((T*)pool[internal_entity.id()]);
 		}
 
-		// this is the most basic thing I could think of now 
-		// to provide this capability 
-		//template<typename required, typename current>
-		//required&
-		//get_related_component(const Component<current>& component)
-		//{
-		//	const auto type = utility::get_type_identifier<required>();
-		//	const auto& pool = component_pools[type].components;
-		//	return *((required*)pool[component.entity_id.id()].data);
-		//}
+		template<typename required, typename current>
+		required&
+		get_related_component(const Component<current>& component)
+		{
+			const auto type = utility::get_type_identifier<required>();
+			const auto& pool = component_pools[type].components;
+			return *((required*)pool[component.entity_id]);
+		}
 
 		template<typename T>
 		component_view<T>

@@ -97,28 +97,28 @@ namespace ecs
 		}
 	};
 
-	/*template<typename T>
+	template<typename T>
 	struct Component
 	{
-		T& data
+		T* data;
 		cpprelude::usize entity_id;
 		
-		Component(T& data_ref, cpprelude::usize entity_index)
-			:data(data_ref), entity_id(entity_index)
+		Component(T* data_ptr, cpprelude::usize entity_index)
+			:data(data_ptr), entity_id(entity_index)
 		{}
 
-		T&
-		operator*()
+		T*
+		operator->()
 		{
 			return data;
 		}
 
-		const T&
-		operator*() const
+		const T*
+		operator->() const
 		{
 			return data;
 		}
-	};*/
+	};
 
 	
 

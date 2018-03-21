@@ -144,14 +144,18 @@ namespace ecs
 				&& entity.number == _entity_index[entity.id()].number;
 		}
 
+		bool
+		has(cpprelude::usize index)
+		{
+			return index < _entity_index.count()
+				&& index == _entity_index[index].id();
+		}
+
 		void
 		remove(cpprelude::usize index)
 		{
 			_entity_index[index].increment_version();
-			
-			if (recycle_count)
-				std::swap(next, _entity_index[index]);
-			
+			std::swap(next, _entity_index[index]);
 			++recycle_count;
 		}
 

@@ -132,7 +132,12 @@ namespace ecs
 		}
 	};
 
-	
+	struct generic_component
+	{
+		void* data;
+		cpprelude::usize entity_id;
+		const char* type;
+	};
 
 	
 

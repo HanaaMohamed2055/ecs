@@ -7,3 +7,6 @@
 [submodule "scratch/deps/entt"]
 	path = scratch/deps/entt
 	url = git@github.com:skypjack/entt.git
+[submodule "deps/math"]
+	path = deps/math
+	url = git@github.com:Symbyo360/math.git

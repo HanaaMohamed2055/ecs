@@ -9,7 +9,8 @@ project "ecs"
 
 	includedirs {
 		"include/",
-		cpprelude_path .. "/include/"
+		cpprelude_path .. "/include/",
+		math_path .. "/include/"
 	}
 
 	links {"cpprelude"}

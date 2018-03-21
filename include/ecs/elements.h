@@ -105,6 +105,10 @@ namespace ecs
 		void* data = nullptr;
 		ID entity_id;
 		bool managed = false;
+		
+		Internal_Component(void* data_ptr, ID id, bool allocated_by_world)
+			:data(data_ptr), entity_id(id), managed(allocated_by_world)
+		{}
 	};
 
 	// still I am not so sure I will be using this or not

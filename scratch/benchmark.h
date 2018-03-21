@@ -32,6 +32,7 @@ create_ecs_entities(workbench* bench, usize limit)
 {
 	ecs::World world;
 	bench->watch.start();
+	world.entity_set.reserve(limit);
 
 	for (usize i = 0; i < limit; ++i)
 		world.create_entity();
@@ -57,6 +58,7 @@ void
 destroy_ecs_entities(workbench* bench, cpprelude::usize limit)
 {
 	ecs::World world;
+	
 	bench->watch.start();
 
 	for (usize i = 0; i < limit; ++i)
@@ -90,7 +92,9 @@ create_ecs_small_entities(workbench* bench, cpprelude::usize limit)
 {
 	ecs::World world;
 	bench->watch.start();
-	
+	world.entity_set.reserve(limit);
+	world.get_pool<Position>().components.reserve(limit);
+
 	for (usize i = 0; i < limit; ++i)
 		world.create_entity<Position>();
 	
@@ -102,6 +106,7 @@ create_entt_small_entities(workbench* bench, cpprelude::usize limit)
 {
 	entt::DefaultRegistry registry;
 	bench->watch.start();
+	registry.reserve<Position>(limit);
 	
 	for (usize i = 0; i < limit; ++i)
 		registry.create<Position>();

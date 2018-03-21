@@ -30,9 +30,34 @@ int main()
 	world.add_property<r64>(e2, (r64)500.4739);
 
 
+<<<<<<< Updated upstream
 	auto& entities = world.get_all_world_entities();
 	for (auto e : entities)
 	std::cout << e.id() << " " << e.version() << std::endl;
+=======
+			neo.position = temp_position;
+		}
+	}
+}
+
+namespace projection_system
+{
+	void project(World& world)
+	{
+		auto collision_components = world.get_world_components<collision_component>();
+
+		for (auto iter = collision_components.begin(); iter != collision_components.end(); ++iter)
+		{
+			// TODO
+			auto& r = world.get<rendering_component>(iter.entity());
+			auto& c = *iter;
+			auto x = c.position[0], y = c.position[1], z = c.position[2];
+			r.position[0] = (int)((WINDOW_WIDTH / 2) + x * 200 / (z + 1.0f));
+			r.position[1] = (int)((WINDOW_HEIGHT / 2) + y * 200 / (z + 1.0f));
+		}
+	}
+}
+>>>>>>> Stashed changes
 
 	for (auto component : view)
 	{

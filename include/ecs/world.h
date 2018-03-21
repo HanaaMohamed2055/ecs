@@ -52,16 +52,6 @@ namespace ecs
 			return Entity(entity, this);
 		}
 
-		template<typename T, typename ... TArgs>
-		Entity
-		create_entity()
-		{
-			ID entity = entity_set.insert_one_more();
-			add_property<T, TArgs...>(entity, std::forward<TArgs>(args)...);
-			return Entity(entity, this);
-		}
-
-
 		template<typename T>
 		component_pool&
 		get_pool(cpprelude::memory_context* context = cpprelude::platform->global_memory)
@@ -126,16 +116,14 @@ namespace ecs
 				auto& pool = get_pool<T>(context);
 
 				// constructing component itself
-				Internal_Component component;
-				component.data = pool._context->alloc<T>();
-				new (component.data) T(std::forward<TArgs>(args)...);
-				component.entity_id = internal_entity;
-				component.managed = true;
+				void* data = pool._context->alloc<T>();
+				new (data) T(std::forward<TArgs>(args)...);
 
 				// registering component with the world and the entity 
-				pool.components.insert_at(internal_entity.id(), component);
+				pool.components.insert_at(internal_entity.id(), 
+										  Internal_Component(data, internal_entity, true));
 
-				return *(static_cast<T*>(component.data));
+				return *(static_cast<T*>(data));
 			}
 		}
 
@@ -175,16 +163,14 @@ namespace ecs
 				auto& pool = get_pool<T>(context);
 
 				// constructing component itself
-				Internal_Component component;
-				component.data = pool._context->alloc<T>();
-				new (component.data) T(value);
-				component.entity_id = internal_entity;
-				component.managed = true;
-
+				void* data = pool._context->alloc<T>();
+				new (data) T(value);
+				
 				// registering component with the world and the entity 
-				pool.components.insert_at(internal_entity.id(), component);
+				pool.components.insert_at(internal_entity.id(), 
+										  Internal_Component(data, internal_entity, true));
 
-				return *(static_cast<T*>(component.data));
+				return *(static_cast<T*>(data));
 			}
 		}
 
@@ -205,17 +191,10 @@ namespace ecs
 			if (entity_set.has(internal_entity))
 			{
 				auto& pool = get_pool<T>();
-
-				// constructing component itself/////
-				Internal_Component component;
-				component.data = data;
-				component.entity_id = internal_entity;
-				component.managed = true;
-
+				
 				// registering component with the world and the entity 
-				pool.components.insert_at(internal_entity.id(), component);
-
-				return *(static_cast<T*>(component.data));
+				pool.components.insert_at(internal_entity.id(), 
+										  Internal_Component(data, internal_entity, true));
 			}
 		}
 			
@@ -234,8 +213,8 @@ namespace ecs
 			if (!entity_alive(e) || !type_exists<T>())
 				return false;
 			
-			auto type = utility::get_type_identifier<T>();
-			auto pool = component_pools[type].components;
+			const auto type = utility::get_type_identifier<T>();
+			const auto& pool = component_pools[type].components;
 			
 			return pool.has(e.id());
 		}
@@ -247,8 +226,8 @@ namespace ecs
 			if (!entity_set.has(internal_entity) || !type_exists<T>())
 				return false;
 
-			auto type = utility::get_type_identifier<T>();
-			auto pool = component_pools[type].components;
+			const auto type = utility::get_type_identifier<T>();
+			const auto& pool = component_pools[type].components;
 
 			return pool.has(internal_entity.id());
 		}
@@ -260,7 +239,7 @@ namespace ecs
 			if (!entity_alive(e) || !type_exists<T>() || !has<T>(e))
 				return;
 
-			auto type = utility::get_type_identifier<T>();
+			const auto type = utility::get_type_identifier<T>();
 			auto& pool = component_types[type].components;
 			pool.remove(e.id());
 		}
@@ -272,7 +251,7 @@ namespace ecs
 			if (!entity_set.has(internal_entity) || !type_exists<T>() || !has<T>(e))
 				return;
 
-			auto type = utility::get_type_identifier<T>();
+			const auto type = utility::get_type_identifier<T>();
 			auto& pool = component_types[type].components;
 			pool.remove(internal_entity.id());
 		}
@@ -281,8 +260,8 @@ namespace ecs
 		T& 
 		get(Entity e)
 		{	
-			auto type = utility::get_type_identifier<T>();
-			auto pool = component_pools[type].components;
+			const auto type = utility::get_type_identifier<T>();
+			const auto& pool = component_pools[type].components;
 			return *((T*)pool[e.id()].data);
 		}
 
@@ -290,8 +269,8 @@ namespace ecs
 		T&
 		get(ID internal_entity)
 		{
-			auto type = utility::get_type_identifier<T>();
-			auto pool = component_pools[type].components;
+			const auto type = utility::get_type_identifier<T>();
+			const auto& pool = component_pools[type].components;
 			return *((T*)pool[internal_entity.id()].data);
 		}
 
@@ -331,7 +310,7 @@ namespace ecs
 		
 		~World()
 		{
-			//clean_up();
+			clean_up();
 		}
 	};
 }

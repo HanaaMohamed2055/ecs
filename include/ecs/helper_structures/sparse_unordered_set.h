@@ -177,7 +177,6 @@ namespace ecs
 			++recycle_count;
 		}
 		
-		// [] and at are used to retrieve the object using its index in the sparse container
 		T&
 		operator[](cpprelude::usize sparse_index)
 		{
@@ -190,18 +189,6 @@ namespace ecs
 			return _dense[_sparse[sparse_index]];
 		}
 
-		T&
-		at(cpprelude::usize sparse_index)
-		{
-			return _dense[_sparse[sparse_index]];
-		}
-
-		const T&
-		at(cpprelude::usize sparse_index) const
-		{
-			return _dense[_sparse[sparse_index]];
-		}
-		
 		cpprelude::usize
 		count() const
 		{

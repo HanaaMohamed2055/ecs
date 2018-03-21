@@ -38,11 +38,11 @@ namespace ecs
 	//	return generic_component_view(component_pools);
 	//}
 
-	//sparse_unordered_set<Entity>&
-	//World::get_all_world_entities()
-	//{
-	//	//return entity_set;
-	//}
+	entity_array&
+	World::get_all_world_entities()
+	{
+		return entities;
+	}
 
 	void
 	World::kill_entity(Entity e)

@@ -10,10 +10,7 @@
 int main()
 {
 	benchmark();
-
-	/*ecs::World world;
-	auto entity = world.create_entity<u32>(322);
-	std::cout << world.get<u32>(entity) << std::endl;*/
+	
 }
 
 //benchmark();

@@ -5,7 +5,9 @@
 #include <ecs/api.h>
 
 namespace ecs
-{
+{	
+	constexpr cpprelude::usize INVALID_PLACE = -1;
+
 	using _id_type = cpprelude::u64;
 	using _version_type = cpprelude::u32;
 
@@ -95,45 +97,32 @@ namespace ecs
 		}
 	};
 
-	struct Internal_Component
-	{
-		void* data = nullptr;
-		ID entity_id;
-		bool managed = false;
-		
-		Internal_Component(void* data_ptr, ID id, bool allocated_by_world)
-			:data(data_ptr), entity_id(id), managed(allocated_by_world)
-		{}
-	};
-
-	// still I am not so sure I will be using this or not
-	template<typename T>
+	/*template<typename T>
 	struct Component
 	{
-		T* data = nullptr;
-		ID entity_id;
-			
-		Component()
-		{}
-
-		Component(const Internal_Component& c)
-			:data(c.data), entity_id(c.entity_id), world(w)
+		T& data
+		cpprelude::usize entity_id;
+		
+		Component(T& data_ref, cpprelude::usize entity_index)
+			:data(data_ref), entity_id(entity_index)
 		{}
 
 		T&
 		operator*()
 		{
-			return *T;
+			return data;
 		}
 
 		const T&
 		operator*() const
 		{
-			return *T;
+			return data;
 		}
-	};
+	};*/
 
-	constexpr cpprelude::usize INVALID_PLACE = -1;
+	
+
+	
 
 	
 }

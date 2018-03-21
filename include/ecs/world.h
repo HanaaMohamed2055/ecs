@@ -9,67 +9,7 @@
 
 namespace ecs
 {	
-	struct component_pool
-	{
-		utility::base_type_utils* utils = nullptr;
-		cpprelude::memory_context* _context = nullptr;
-
-		cpprelude::dynamic_array<void*> components;
-		cpprelude::dynamic_array<bool> managed;
-		cpprelude::dynamic_array<cpprelude::usize> sparse;
-		cpprelude::dynamic_array<cpprelude::usize> dense;
-
-		component_pool(cpprelude::memory_context* context)
-			:_context(context),
-			components(context),
-			sparse(context),
-			dense(context)
-		{}
-
-		component_pool()
-			:_context(nullptr)
-		{}
-
-		void
-			insert_at(cpprelude::usize entity_index, void* data_ptr, bool allocated_by_pool = true)
-		{
-			if (components.capacity() <= entity_index)
-			{
-				components.expand_back(2 * (entity_index + 1), nullptr);
-				managed.expand_back(2 * (entity_index + 1), false);
-				sparse.expand_back(2 * (entity_index + 1), INVALID_PLACE);
-			}
-			components[entity_index] = data_ptr;
-			managed[entity_index] = allocated_by_pool;
-			sparse[entity_index] = dense.count();
-			dense.insert_back(entity_index);
-		}
-
-		void
-			remove(cpprelude::usize entity_index)
-		{
-			if (entity_index < components.count())
-			{
-				if (managed[entity_index])
-					utils->free(components[entity_index], _context);
-
-				components[entity_index] = nullptr;
-				cpprelude::usize dense_index = sparse[entity_index];
-				std::swap(dense[dense_index], dense[dense.count()]);
-				sparse[dense[dense_index]] = dense_index;
-				sparse[entity_index] = -1;
-				dense.remove_back();
-			}
-		}
-
-		bool
-			has(cpprelude::usize entity_index) const
-		{
-			return entity_index < components.count()
-				&& components[entity_index] != nullptr;
-		}
-
-	};
+	
 	struct World
 	{
 		using entity_components = cpprelude::dynamic_array<cpprelude::dynamic_array <std::pair<cpprelude::usize, cpprelude::usize>>> ;
@@ -341,12 +281,12 @@ namespace ecs
 		//	return *((required*)pool[component.entity_id.id()].data);
 		//}
 
-		//template<typename T>
-		//component_view<T>
-		//get_world_components()
-		//{
-		//	return component_view<T>(get_pool<T>());
-		//}
+		template<typename T>
+		component_view<T>
+		get_world_components()
+		{
+			return component_view<T>(get_pool<T>());
+		}
 			
 		API_ECS Entity
 		create_entity();
@@ -363,8 +303,8 @@ namespace ecs
 		API_ECS generic_component_view
 		get_all_world_components();*/
 				
-		/*API_ECS sparse_unordered_set<Entity>&
-		get_all_world_entities();*/
+		API_ECS entity_array&
+		get_all_world_entities();
 						
 		API_ECS void
 		kill_entity(Entity e);
@@ -372,6 +312,8 @@ namespace ecs
 		API_ECS void
 		kill_entity(ID internal_entity);
 
+		//API_ECS void
+		//kill_entity(cpprelude::usize entity_index);
 		/*API_ECS void
 		clean_up();
 		

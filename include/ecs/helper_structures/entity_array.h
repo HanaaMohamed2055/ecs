@@ -7,9 +7,6 @@
 
 namespace ecs
 {
-
-	constexpr _version_type INVALID_VERSION = 0xFFFFFF;
-
 	struct entity_iterator
 	{
 		using iterator_category = std::forward_iterator_tag;
@@ -21,27 +18,31 @@ namespace ecs
 
 		cpprelude::sequential_iterator<ID> _entity_it;
 		cpprelude::usize _recycle_count;
-		cpprelude::usize index = 0;
+		cpprelude::usize _index = 0;
+		cpprelude::usize _count = 0;
 
-		entity_iterator(cpprelude::sequential_iterator<ID> entity_it, cpprelude::usize recycle_count)
-			:_entity_it(entity_it), _recycle_count(recycle_count)
+		entity_iterator(cpprelude::sequential_iterator<ID> entity_it, cpprelude::usize recycle_count, cpprelude::usize count)
+			:_entity_it(entity_it), _recycle_count(recycle_count), _count(count)
 		{
-			while (_entity_it->id() != index || (_entity_it->id() == index && _recycle_count == 1))
+			while (_count && _entity_it->id() != _index || (_entity_it->id() == _index && _recycle_count == 1))
 			{
-				++index;
+				++_index;
+				--_count;
 				++_entity_it;
 			}
 		}
 
 		entity_iterator&
-			operator++()
+		operator++()
 		{
 			++_entity_it;
-			++index;
+			++_index;
+			--_count;
 
-			while (_entity_it->id() != index || (_entity_it->id() == index && _recycle_count == 1))
+			while (_count && _entity_it->id() != _index || (_entity_it->id() == _index && _recycle_count == 1))
 			{
-				++index;
+				++_index;
+				--_count;
 				++_entity_it;
 			}
 
@@ -49,15 +50,15 @@ namespace ecs
 		}
 
 		entity_iterator&
-			operator++(int)
+		operator++(int)
 		{
 			auto result = *this;
 			++_entity_it;
-			++index;
+			++_index;
 
-			while (_entity_it->id() != index || (_entity_it->id() == index && _recycle_count == 1))
+			while (_count && _entity_it->id() != _index || (_entity_it->id() == _index && _recycle_count == 1))
 			{
-				++index;
+				++_index;
 				++_entity_it;
 			}
 
@@ -65,7 +66,7 @@ namespace ecs
 		}
 
 		bool
-			operator==(const entity_iterator& other) const
+		operator==(const entity_iterator& other) const
 		{
 			return _entity_it == other._entity_it;
 		}
@@ -77,31 +78,31 @@ namespace ecs
 		}
 
 		value_type&
-			value()
+		value()
 		{
 			return *_entity_it;
 		}
 
 		const value_type&
-			value() const
+		value() const
 		{
 			return *_entity_it;
 		}
 
 		value_type&
-			operator*()
+		operator*()
 		{
 			return *_entity_it;
 		}
 
 		const value_type&
-			operator*() const
+		operator*() const
 		{
 			return *_entity_it;
 		}
 
 		value_type*
-			operator->()
+		operator->()
 		{
 			return _entity_it;
 		}
@@ -193,13 +194,13 @@ namespace ecs
 		iterator
 		begin()
 		{
-			return iterator(_entity_index.begin(), recycle_count);
+			return iterator(_entity_index.begin(), recycle_count, _entity_index.count());
 		}
 
 		iterator
 		end()
 		{
-			return iterator(_entity_index.end(), recycle_count);
+			return iterator(_entity_index.end(), recycle_count, 0);
 		}
 	};
 

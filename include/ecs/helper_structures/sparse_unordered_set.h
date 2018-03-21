@@ -149,7 +149,7 @@ namespace ecs
 		}
 
 		bool
-		has(cpprelude::usize index)
+		has(cpprelude::usize index) const
 		{
 			return 
 				index < _sparse.count()
@@ -419,20 +419,9 @@ namespace ecs
 		{}
 	};
 
-	struct component_pool
-	{
-		utility::base_type_utils* utils = nullptr;
-		cpprelude::memory_context* _context = nullptr;
-
-		sparse_unordered_set<Internal_Component> components;
-
-		component_pool(cpprelude::memory_context* context)
-			:_context(context),
-			components(context)
-		{}
-
-		component_pool()
-			:_context(nullptr)
-		{}
-	};
+	//template<>
+	//struct sparse_unordered_set<Internal_Component>
+	//{
+	//	using iterator = cpprelude::sequential_iterator<>
+	//};
 }

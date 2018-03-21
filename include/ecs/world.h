@@ -5,23 +5,82 @@
 #include <ecs/helper_structures/view.h>
 #include <ecs/api.h>
 #include <ecs/utility.h>
-#include <ecs/helper_structures/sparse_unordered_set.h>
-
-#define PREALLOCATED 1024
+#include <ecs/helper_structures/entity_array.h>
 
 namespace ecs
-{		
+{	
+	struct component_pool
+	{
+		utility::base_type_utils* utils = nullptr;
+		cpprelude::memory_context* _context = nullptr;
+
+		cpprelude::dynamic_array<void*> components;
+		cpprelude::dynamic_array<bool> managed;
+		cpprelude::dynamic_array<cpprelude::usize> sparse;
+		cpprelude::dynamic_array<cpprelude::usize> dense;
+
+		component_pool(cpprelude::memory_context* context)
+			:_context(context),
+			components(context),
+			sparse(context),
+			dense(context)
+		{}
+
+		component_pool()
+			:_context(nullptr)
+		{}
+
+		void
+			insert_at(cpprelude::usize entity_index, void* data_ptr, bool allocated_by_pool = true)
+		{
+			if (components.capacity() <= entity_index)
+			{
+				components.expand_back(2 * (entity_index + 1), nullptr);
+				managed.expand_back(2 * (entity_index + 1), false);
+				sparse.expand_back(2 * (entity_index + 1), INVALID_PLACE);
+			}
+			components[entity_index] = data_ptr;
+			managed[entity_index] = allocated_by_pool;
+			sparse[entity_index] = dense.count();
+			dense.insert_back(entity_index);
+		}
+
+		void
+			remove(cpprelude::usize entity_index)
+		{
+			if (entity_index < components.count())
+			{
+				if (managed[entity_index])
+					utils->free(components[entity_index], _context);
+
+				components[entity_index] = nullptr;
+				cpprelude::usize dense_index = sparse[entity_index];
+				std::swap(dense[dense_index], dense[dense.count()]);
+				sparse[dense[dense_index]] = dense_index;
+				sparse[entity_index] = -1;
+				dense.remove_back();
+			}
+		}
+
+		bool
+			has(cpprelude::usize entity_index) const
+		{
+			return entity_index < components.count()
+				&& components[entity_index] != nullptr;
+		}
+
+	};
 	struct World
 	{
 		using entity_components = cpprelude::dynamic_array<cpprelude::dynamic_array <std::pair<cpprelude::usize, cpprelude::usize>>> ;
 
-		sparse_unordered_set<Entity> entity_set;
+		entity_array entities ;
 		cpprelude::dynamic_array<component_pool> component_pools;
 		cpprelude::memory_context* _context;
 	
 		World(cpprelude::memory_context* context = cpprelude::platform->global_memory)
 			:_context(context),
-			entity_set(context),
+			entities(context),
 			component_pools(context)
 		{} 
 				
@@ -29,7 +88,7 @@ namespace ecs
 		Entity
 		create_entity(TArgs&& ... args)
 		{
-			ID entity = entity_set.insert_one_more();
+			ID entity = entities.insert();
 			add_property<T, TArgs...>(entity, std::forward<TArgs>(args)...);
 			return Entity(entity, this);
 		}
@@ -38,7 +97,7 @@ namespace ecs
 		Entity
 		create_entity(const T& value)
 		{
-			ID entity = entity_set.insert_one_more();
+			ID entity = entities.insert();
 			add_property<T>(entity, value);
 			return Entity(entity, this);
 		}
@@ -47,7 +106,7 @@ namespace ecs
 		Entity
 		create_entity(T* value)
 		{
-			ID entity = entity_set.insert_one_more();
+			ID entity = entities.insert();
 			add_property<T>(entity, value);
 			return Entity(entity, this);
 		}
@@ -75,7 +134,7 @@ namespace ecs
 		void
 		add_entity(T& entity)
 		{
-			auto entity_id = entity_set.insert_one_more();
+			auto entity_id = entities.insert();
 			entity.entity_id = entity_id;
 			entity.world = this;
 		}
@@ -111,7 +170,7 @@ namespace ecs
 		T&
 		add_property(ID internal_entity, cpprelude::memory_context* context, TArgs&& ... args)
 		{
-			if (entity_set.has(internal_entity))
+			if (entities.has(internal_entity))
 			{
 				auto& pool = get_pool<T>(context);
 
@@ -120,8 +179,7 @@ namespace ecs
 				new (data) T(std::forward<TArgs>(args)...);
 
 				// registering component with the world and the entity 
-				pool.components.insert_at(internal_entity.id(), 
-										  Internal_Component(data, internal_entity, true));
+				pool.insert_at(internal_entity.id(), data);
 
 				return *(static_cast<T*>(data));
 			}
@@ -158,7 +216,7 @@ namespace ecs
 		T&
 		add_property(ID internal_entity, cpprelude::memory_context* context, const T& value)
 		{
-			if (entity_set.has(internal_entity))
+			if (entities.has(internal_entity))
 			{
 				auto& pool = get_pool<T>(context);
 
@@ -167,8 +225,7 @@ namespace ecs
 				new (data) T(value);
 				
 				// registering component with the world and the entity 
-				pool.components.insert_at(internal_entity.id(), 
-										  Internal_Component(data, internal_entity, true));
+				pool.insert_at(internal_entity.id(), data);
 
 				return *(static_cast<T*>(data));
 			}
@@ -188,13 +245,12 @@ namespace ecs
 		void
 		add_property(ID internal_entity, T* data)
 		{
-			if (entity_set.has(internal_entity))
+			if (entities.has(internal_entity))
 			{
 				auto& pool = get_pool<T>();
 				
 				// registering component with the world and the entity 
-				pool.components.insert_at(internal_entity.id(), 
-										  Internal_Component(data, internal_entity, true));
+				pool.insert_at(internal_entity.id(), data, false);
 			}
 		}
 			
@@ -214,7 +270,7 @@ namespace ecs
 				return false;
 			
 			const auto type = utility::get_type_identifier<T>();
-			const auto& pool = component_pools[type].components;
+			const auto& pool = component_pools[type];
 			
 			return pool.has(e.id());
 		}
@@ -223,11 +279,11 @@ namespace ecs
 		bool
 		has(ID internal_entity)
 		{
-			if (!entity_set.has(internal_entity) || !type_exists<T>())
+			if (!entities.has(internal_entity) || !type_exists<T>())
 				return false;
 
 			const auto type = utility::get_type_identifier<T>();
-			const auto& pool = component_pools[type].components;
+			const auto& pool = component_pools[type];
 
 			return pool.has(internal_entity.id());
 		}
@@ -240,7 +296,7 @@ namespace ecs
 				return;
 
 			const auto type = utility::get_type_identifier<T>();
-			auto& pool = component_types[type].components;
+			auto& pool = component_types[type];
 			pool.remove(e.id());
 		}
 
@@ -248,11 +304,11 @@ namespace ecs
 		void
 		remove_property(ID internal_entity)
 		{
-			if (!entity_set.has(internal_entity) || !type_exists<T>() || !has<T>(e))
+			if (!entities.has(internal_entity) || !type_exists<T>() || !has<T>(e))
 				return;
 
 			const auto type = utility::get_type_identifier<T>();
-			auto& pool = component_types[type].components;
+			auto& pool = component_types[type];
 			pool.remove(internal_entity.id());
 		}
 
@@ -262,7 +318,7 @@ namespace ecs
 		{	
 			const auto type = utility::get_type_identifier<T>();
 			const auto& pool = component_pools[type].components;
-			return *((T*)pool[e.id()].data);
+			return *((T*)pool[e.id()]);
 		}
 
 		template<typename T>
@@ -271,15 +327,26 @@ namespace ecs
 		{
 			const auto type = utility::get_type_identifier<T>();
 			const auto& pool = component_pools[type].components;
-			return *((T*)pool[internal_entity.id()].data);
+			return *((T*)pool[internal_entity.id()]);
 		}
 
-		template<typename T>
-		component_view<T>
-		get_world_components()
-		{
-			return component_view<T>(get_pool<T>());
-		}
+		// this is the most basic thing I could think of now 
+		// to provide this capability 
+		//template<typename required, typename current>
+		//required&
+		//get_related_component(const Component<current>& component)
+		//{
+		//	const auto type = utility::get_type_identifier<required>();
+		//	const auto& pool = component_pools[type].components;
+		//	return *((required*)pool[component.entity_id.id()].data);
+		//}
+
+		//template<typename T>
+		//component_view<T>
+		//get_world_components()
+		//{
+		//	return component_view<T>(get_pool<T>());
+		//}
 			
 		API_ECS Entity
 		create_entity();
@@ -287,17 +354,17 @@ namespace ecs
 		API_ECS bool
 		entity_alive(Entity entity);
 
-		API_ECS entity_components_view
+		/*API_ECS entity_components_view
 		get_all_entity_properties(Entity e);
 
 		API_ECS entity_components_view
 		get_all_entity_properties(ID internal_entity);
 
 		API_ECS generic_component_view
-		get_all_world_components();
+		get_all_world_components();*/
 				
-		API_ECS sparse_unordered_set<Entity>&
-		get_all_world_entities();
+		/*API_ECS sparse_unordered_set<Entity>&
+		get_all_world_entities();*/
 						
 		API_ECS void
 		kill_entity(Entity e);
@@ -305,12 +372,12 @@ namespace ecs
 		API_ECS void
 		kill_entity(ID internal_entity);
 
-		API_ECS void
+		/*API_ECS void
 		clean_up();
 		
 		~World()
 		{
 			clean_up();
-		}
+		}*/
 	};
 }

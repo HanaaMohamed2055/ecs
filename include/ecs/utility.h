@@ -126,5 +126,4 @@ namespace utility
 			new(to) T(value);
 		}
 	}
-
 }

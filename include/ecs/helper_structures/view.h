@@ -2,153 +2,154 @@
 #include <cpprelude/iterator.h>
 #include <cpprelude/dynamic_array.h>
 
-#include <ecs/helper_structures/sparse_unordered_set.h>
 #include <ecs/elements.h>
 #include <ecs/utility.h>
 namespace ecs
 {
-	struct generic_component_iterator
-	{
-		using component_iterator = cpprelude::sequential_iterator<Internal_Component>;
-		
-		using iterator_category = std::forward_iterator_tag;
-		using value_type = Internal_Component;
-		using difference_type = cpprelude::isize;
-		using pointer = Internal_Component*;
-		using reference = Internal_Component&;
-		using data_type = Internal_Component;
 
-		component_iterator _component_it;
-		cpprelude::sequential_iterator<component_pool> _pool_it;
-		cpprelude::usize _pool_count = 0;
-		cpprelude::usize _component_count = 0; // per pool
 
-		generic_component_iterator(cpprelude::sequential_iterator<component_pool> pool_it, cpprelude::usize pool_count)
-			:_pool_it(pool_it), _pool_count(pool_count)
-		{
-			if (_pool_count)
-			{
-				--_pool_count;
-				_component_count = _pool_it->components.count() - 1;
-				_component_it = _pool_it->components.begin();
-			}
-			else
-				_component_count = 0;
-		}
+	//struct generic_component_iterator
+	//{
+	//	using component_iterator = cpprelude::sequential_iterator<Internal_Component>;
+	//	
+	//	using iterator_category = std::forward_iterator_tag;
+	//	using value_type = Internal_Component;
+	//	using difference_type = cpprelude::isize;
+	//	using pointer = Internal_Component*;
+	//	using reference = Internal_Component&;
+	//	using data_type = Internal_Component;
 
-		generic_component_iterator(const generic_component_iterator& other)
-			:_pool_it(other._pool_it), _pool_count(other._pool_count)
-		{
-			if (_pool_count)
-			{
-				--_pool_count;
-				_component_count = _pool_it->components.count() - 1;
-				_component_it = _pool_it->components.begin();
-			}
-			else
-				_component_count = 0;
-		}
+	//	component_iterator _component_it;
+	//	cpprelude::sequential_iterator<component_pool> _pool_it;
+	//	cpprelude::usize _pool_count = 0;
+	//	cpprelude::usize _component_count = 0; // per pool
 
-		generic_component_iterator&
-		operator++()
-		{
-			if (_component_count)
-			{
-				++_component_it;
-				--_component_count;
-			}
-			else if (_pool_count)
-			{
-				++_pool_it;
-				_component_count = _pool_it->components.count() - 1;
-				_component_it = _pool_it->components.begin();
-				--_pool_count;
-			}
-			else if (!_pool_count)
-				++_pool_it;
-		
-			return *this; 
-		}
+	//	generic_component_iterator(cpprelude::sequential_iterator<component_pool> pool_it, cpprelude::usize pool_count)
+	//		:_pool_it(pool_it), _pool_count(pool_count)
+	//	{
+	//		if (_pool_count)
+	//		{
+	//			--_pool_count;
+	//			_component_count = _pool_it->components.count() - 1;
+	//			_component_it = _pool_it->components.begin();
+	//		}
+	//		else
+	//			_component_count = 0;
+	//	}
 
-		generic_component_iterator&
-		operator++(int)
-		{
-			auto result = *this;
-			
-			if (_component_count)
-			{
-				++_component_it;
-				--_component_count;
-			}
-			else if (_pool_count)
-			{
-				++_pool_it;
-				_component_count = _pool_it->components.count() - 1;
-				_component_it = _pool_it->components.begin();
-				--_pool_count;
-			}
-			else if (!_pool_count)
-				++_pool_it;
+	//	generic_component_iterator(const generic_component_iterator& other)
+	//		:_pool_it(other._pool_it), _pool_count(other._pool_count)
+	//	{
+	//		if (_pool_count)
+	//		{
+	//			--_pool_count;
+	//			_component_count = _pool_it->components.count() - 1;
+	//			_component_it = _pool_it->components.begin();
+	//		}
+	//		else
+	//			_component_count = 0;
+	//	}
 
-			return result;
-		}
+	//	generic_component_iterator&
+	//	operator++()
+	//	{
+	//		if (_component_count)
+	//		{
+	//			++_component_it;
+	//			--_component_count;
+	//		}
+	//		else if (_pool_count)
+	//		{
+	//			++_pool_it;
+	//			_component_count = _pool_it->components.count() - 1;
+	//			_component_it = _pool_it->components.begin();
+	//			--_pool_count;
+	//		}
+	//		else if (!_pool_count)
+	//			++_pool_it;
+	//	
+	//		return *this; 
+	//	}
 
-		bool
-		operator==(const generic_component_iterator& other) const
-		{
-			return _pool_it == other._pool_it
-				&& _component_count == other._component_count;
-		}
+	//	generic_component_iterator&
+	//	operator++(int)
+	//	{
+	//		auto result = *this;
+	//		
+	//		if (_component_count)
+	//		{
+	//			++_component_it;
+	//			--_component_count;
+	//		}
+	//		else if (_pool_count)
+	//		{
+	//			++_pool_it;
+	//			_component_count = _pool_it->components.count() - 1;
+	//			_component_it = _pool_it->components.begin();
+	//			--_pool_count;
+	//		}
+	//		else if (!_pool_count)
+	//			++_pool_it;
 
-		bool
-		operator!=(const generic_component_iterator& other) const
-		{
-			return !operator==(other);
-		}
+	//		return result;
+	//	}
 
-		ID
-		entity()
-		{
-			return _component_it->entity_id;
-		}
+	//	bool
+	//	operator==(const generic_component_iterator& other) const
+	//	{
+	//		return _pool_it == other._pool_it
+	//			&& _component_count == other._component_count;
+	//	}
 
-		value_type&
-		value()
-		{
-			return *_component_it;
-		}
+	//	bool
+	//	operator!=(const generic_component_iterator& other) const
+	//	{
+	//		return !operator==(other);
+	//	}
 
-		const value_type&
-		value() const
-		{
-			return *_component_it;
-		}
-		
-		value_type&
-		operator*()
-		{
-			return *_component_it;
-		}
+	//	ID
+	//	entity()
+	//	{
+	//		return _component_it->entity_id;
+	//	}
 
-		const value_type&
-		operator*() const
-		{
-			return *_component_it;
-		}
+	//	value_type&
+	//	value()
+	//	{
+	//		return *_component_it;
+	//	}
 
-		const char*
-		type() const
-		{
-			return _pool_it->utils->type;
-		}
-				
-	};
+	//	const value_type&
+	//	value() const
+	//	{
+	//		return *_component_it;
+	//	}
+	//	
+	//	value_type&
+	//	operator*()
+	//	{
+	//		return *_component_it;
+	//	}
+
+	//	const value_type&
+	//	operator*() const
+	//	{
+	//		return *_component_it;
+	//	}
+
+	//	const char*
+	//	type() const
+	//	{
+	//		return _pool_it->utils->type;
+	//	}
+	//			
+	//};
 
 	
 	template<typename T>
 	struct component_iterator
 	{
-		using component_set_iterator = cpprelude::sequential_iterator<Internal_Component>;
+	/*	using component_set_iterator = cpprelude::sequential_iterator<void*>;
 
 		using iterator_category = std::forward_iterator_tag;
 		using value_type = T;
@@ -158,8 +159,9 @@ namespace ecs
 		using data_type = T;
 
 		component_set_iterator _component_it;
-		
-		component_iterator(const component_set_iterator& it)
+		cpprelude::usize count;
+
+		component_iterator(const component_pool& it)
 			:_component_it(it)
 		{}
 
@@ -171,6 +173,10 @@ namespace ecs
 		operator++()
 		{
 			++_component_it;
+
+			while(*_component_it == nullptr)
+				++_component_it
+
 			return *this;
 		}
 
@@ -227,12 +233,12 @@ namespace ecs
 		operator*() const
 		{
 			return *(static_cast<value_type*>(_component_it->data));
-		}
+		}*/
 	};
 
 	struct entity_components_iterator
 	{
-		using component_iterator = cpprelude::sequential_iterator<Internal_Component>;
+	/*	using component_iterator = cpprelude::sequential_iterator<Internal_Component>;
 
 		using iterator_category = std::forward_iterator_tag;
 		using value_type = Internal_Component;
@@ -342,9 +348,10 @@ namespace ecs
 		{
 			return _pool_it->utils->type;
 		}
+	*/
 	};
 
-	struct entity_components_view
+	/*struct entity_components_view
 	{
 		using iterator = entity_components_iterator;
 		cpprelude::dynamic_array<component_pool>& _pools;
@@ -412,6 +419,6 @@ namespace ecs
 		{
 			return iterator(_pool.components.end());
 		}
-	};
+	};*/
 
 }

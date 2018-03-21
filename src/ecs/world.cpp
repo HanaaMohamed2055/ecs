@@ -5,44 +5,44 @@ namespace ecs
 	Entity
 	World::create_entity()
 	{
-		return Entity(entity_set.insert_one_more(), this);
+		return Entity(entities.insert(), this);
 	}
 	
 	bool
 	World::entity_alive(Entity entity)
 	{
-		return entity.world == this && entity_set.has(entity.id());
+		return entity.world == this && entities.has(entity.entity_id);
 	}
 	
-	entity_components_view
-	World::get_all_entity_properties(Entity e)
-	{
-		if (entity_alive(e))
-		{
-			return entity_components_view(component_pools, e.id());
-		}
-	}
+	//entity_components_view
+	//World::get_all_entity_properties(Entity e)
+	//{
+	//	if (entity_alive(e))
+	//	{
+	//		return entity_components_view(component_pools, e.id());
+	//	}
+	//}
 
-	entity_components_view
-	World::get_all_entity_properties(ID internal_entity)
-	{
-		if (entity_set.has(internal_entity))
-		{
-			return entity_components_view(component_pools, internal_entity.id());
-		}
-	}
+	//entity_components_view
+	//World::get_all_entity_properties(ID internal_entity)
+	//{
+	//	/*if (entity_set.has(internal_entity))
+	//	{
+	//		return entity_components_view(component_pools, internal_entity.id());
+	//	}*/
+	//}
 
-	generic_component_view
-	World::get_all_world_components()
-	{
-		return generic_component_view(component_pools);
-	}
+	//generic_component_view
+	//World::get_all_world_components()
+	//{
+	//	return generic_component_view(component_pools);
+	//}
 
-	sparse_unordered_set<Entity>&
-	World::get_all_world_entities()
-	{
-		return entity_set;
-	}
+	//sparse_unordered_set<Entity>&
+	//World::get_all_world_entities()
+	//{
+	//	//return entity_set;
+	//}
 
 	void
 	World::kill_entity(Entity e)
@@ -53,61 +53,47 @@ namespace ecs
 		cpprelude::usize entity_id = e.id();
 		
 		// remove the entity
-		entity_set.remove(entity_id);
+		entities.remove(entity_id);
 
 		// remove the entity components
 		for (auto& pool : component_pools)
 		{
-			auto& components = pool.components;
-			if (components.has(entity_id))
-			{
-				auto& component = components[entity_id];
-				
-				if (component.managed)
-					pool.utils->free(component.data, pool._context);
-			
-				components.remove(entity_id);
-			}
+			if (pool.has(entity_id))
+				pool.remove(entity_id);
 		}
 	}
 
 	void
 	World::kill_entity(ID internal_entity)
 	{
-		if (!entity_set.has(internal_entity))
+		if (!entities.has(internal_entity))
 			return;
 		
+		cpprelude::usize entity_id = internal_entity.id();
+
 		// remove the entity
-		entity_set.remove(internal_entity.id());
+		entities.remove(entity_id);
 
 		// remove the entity components
 		for (auto& pool : component_pools)
 		{
-			auto& components = pool.components;
-			if (components.has(internal_entity.id()))
-			{
-				auto& component = components[internal_entity.id()];
-
-				if (component.managed)
-					pool.utils->free(component.data, pool._context);
-
-				components.remove(internal_entity.id());
-			}
+			if (pool.has(entity_id))
+				pool.remove(entity_id);
 		}
 	}
 
-	void
-	World::clean_up()
-	{
-		 //deallocate only the memory allocated by the ecs 
-		for (auto& pool: component_pools)
-		{
-			for (auto component : pool.components)
-			{
-				if (component.managed)
-					pool.utils->free(component.data, pool._context);
-			}
-			
-		}
-	}
+	//void
+	//World::clean_up()
+	//{
+	//	 //deallocate only the memory allocated by the ecs 
+	//	for (auto& pool: component_pools)
+	//	{
+	//		for (auto component : pool.components)
+	//		{
+	//			if (component.managed)
+	//				pool.utils->free(component.data, pool._context);
+	//		}
+	//		
+	//	}
+	//}
 }

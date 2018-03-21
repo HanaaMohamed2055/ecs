@@ -4,11 +4,6 @@
 
 #include <ecs/api.h>
 
-namespace utility
-{
-	struct base_type_utils;
-}
-
 namespace ecs
 {
 	using _id_type = cpprelude::u64;
@@ -115,19 +110,30 @@ namespace ecs
 	template<typename T>
 	struct Component
 	{
-		T* _data = nullptr;
-		_id_type _entity_id;
-		World* _world;	
-		
+		T* data = nullptr;
+		ID entity_id;
+			
 		Component()
 		{}
 
-		Component(void* data, _id_type eid, World* world)
-			:_data(data), _entity_id(eid), _world(world)
+		Component(const Internal_Component& c)
+			:data(c.data), entity_id(c.entity_id), world(w)
 		{}
 
-		Component(const Internal_Component& c, World* world)
-			:_data(c.data), _entity_id(c.entity_id), _world(world)
-		{}
+		T&
+		operator*()
+		{
+			return *T;
+		}
+
+		const T&
+		operator*() const
+		{
+			return *T;
+		}
 	};
+
+	constexpr cpprelude::usize INVALID_PLACE = -1;
+
+	
 }

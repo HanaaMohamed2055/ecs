@@ -101,7 +101,7 @@ namespace ecs
 	struct Component
 	{
 		T* data;
-		cpprelude::usize entity_id;
+		const cpprelude::usize entity_id;
 		
 		Component(T* data_ptr, cpprelude::usize entity_index)
 			:data(data_ptr), entity_id(entity_index)
@@ -134,9 +134,13 @@ namespace ecs
 
 	struct generic_component
 	{
-		void* data;
-		cpprelude::usize entity_id;
+		void* data = nullptr;
+		const cpprelude::usize entity_id;
 		const char* type;
+		
+		generic_component(void* data_ptr, cpprelude::usize id, const char* data_type)
+			:data(data_ptr), entity_id(id), type(data_type)
+		{}
 	};
 
 	

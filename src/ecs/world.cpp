@@ -32,11 +32,11 @@ namespace ecs
 	//	}*/
 	//}
 
-	//generic_component_view
-	//World::get_all_world_components()
-	//{
-	//	return generic_component_view(component_pools);
-	//}
+	generic_component_view
+	World::get_all_world_components()
+	{
+		return generic_component_view(component_pools);
+	}
 
 	entity_array&
 	World::get_all_world_entities()

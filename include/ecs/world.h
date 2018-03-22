@@ -12,8 +12,6 @@ namespace ecs
 	
 	struct World
 	{
-		using entity_components = cpprelude::dynamic_array<cpprelude::dynamic_array <std::pair<cpprelude::usize, cpprelude::usize>>> ;
-
 		entity_array entities ;
 		cpprelude::dynamic_array<component_pool> component_pools;
 		cpprelude::memory_context* _context;
@@ -296,10 +294,10 @@ namespace ecs
 		get_all_entity_properties(Entity e);
 
 		API_ECS entity_components_view
-		get_all_entity_properties(ID internal_entity);
+		get_all_entity_properties(ID internal_entity);*/
 
 		API_ECS generic_component_view
-		get_all_world_components();*/
+		get_all_world_components();
 				
 		API_ECS entity_array&
 		get_all_world_entities();

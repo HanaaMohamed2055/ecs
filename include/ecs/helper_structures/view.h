@@ -57,7 +57,7 @@ namespace ecs
 				cpprelude::usize dense_index = sparse[entity_index];
 				std::swap(dense[dense_index], dense[dense.count() - 1]);
 				sparse[dense[dense_index]] = dense_index;
-				sparse[entity_index] = -1;
+				sparse[entity_index] = INVALID_PLACE;
 				dense.remove_back();
 			}
 		}
@@ -70,144 +70,143 @@ namespace ecs
 		}
 
 	};
-	//struct generic_component_iterator
-	//{
-	//	using component_iterator = cpprelude::sequential_iterator<Internal_Component>;
-	//	
-	//	using iterator_category = std::forward_iterator_tag;
-	//	using value_type = Internal_Component;
-	//	using difference_type = cpprelude::isize;
-	//	using pointer = Internal_Component*;
-	//	using reference = Internal_Component&;
-	//	using data_type = Internal_Component;
 
-	//	component_iterator _component_it;
-	//	cpprelude::sequential_iterator<component_pool> _pool_it;
-	//	cpprelude::usize _pool_count = 0;
-	//	cpprelude::usize _component_count = 0; // per pool
+	struct generic_component_iterator
+	{
+		using component_iterator = cpprelude::sequential_iterator<cpprelude::usize>;
+		
+		using iterator_category = std::forward_iterator_tag;
+		using difference_type = cpprelude::isize;
+		using value_type = void*;
 
-	//	generic_component_iterator(cpprelude::sequential_iterator<component_pool> pool_it, cpprelude::usize pool_count)
-	//		:_pool_it(pool_it), _pool_count(pool_count)
-	//	{
-	//		if (_pool_count)
-	//		{
-	//			--_pool_count;
-	//			_component_count = _pool_it->components.count() - 1;
-	//			_component_it = _pool_it->components.begin();
-	//		}
-	//		else
-	//			_component_count = 0;
-	//	}
+		component_iterator _entity_it;
+		cpprelude::sequential_iterator<component_pool> _pool_it;
+		cpprelude::usize _pool_count = 0;
+		cpprelude::usize _component_count = 0; // per pool
 
-	//	generic_component_iterator(const generic_component_iterator& other)
-	//		:_pool_it(other._pool_it), _pool_count(other._pool_count)
-	//	{
-	//		if (_pool_count)
-	//		{
-	//			--_pool_count;
-	//			_component_count = _pool_it->components.count() - 1;
-	//			_component_it = _pool_it->components.begin();
-	//		}
-	//		else
-	//			_component_count = 0;
-	//	}
+		generic_component_iterator(cpprelude::sequential_iterator<component_pool> pool_it, cpprelude::usize pool_count)
+			:_pool_it(pool_it), _pool_count(pool_count)
+		{
+			if (_pool_count)
+			{
+				--_pool_count;
+				_component_count = _pool_it->dense.count() - 1;
+				_entity_it = _pool_it->dense.begin();
+			}
+		}
 
-	//	generic_component_iterator&
-	//	operator++()
-	//	{
-	//		if (_component_count)
-	//		{
-	//			++_component_it;
-	//			--_component_count;
-	//		}
-	//		else if (_pool_count)
-	//		{
-	//			++_pool_it;
-	//			_component_count = _pool_it->components.count() - 1;
-	//			_component_it = _pool_it->components.begin();
-	//			--_pool_count;
-	//		}
-	//		else if (!_pool_count)
-	//			++_pool_it;
-	//	
-	//		return *this; 
-	//	}
+		generic_component_iterator(const generic_component_iterator& other)
+			:_pool_it(other._pool_it), _pool_count(other._pool_count)
+		{
+			if (_pool_count)
+			{
+				--_pool_count;
+				_component_count = _pool_it->dense.count() - 1;
+				_entity_it = _pool_it->dense.begin();
+			}
+		}
 
-	//	generic_component_iterator&
-	//	operator++(int)
-	//	{
-	//		auto result = *this;
-	//		
-	//		if (_component_count)
-	//		{
-	//			++_component_it;
-	//			--_component_count;
-	//		}
-	//		else if (_pool_count)
-	//		{
-	//			++_pool_it;
-	//			_component_count = _pool_it->components.count() - 1;
-	//			_component_it = _pool_it->components.begin();
-	//			--_pool_count;
-	//		}
-	//		else if (!_pool_count)
-	//			++_pool_it;
+		generic_component_iterator&
+		operator++()
+		{
+			if (_component_count)
+			{
+				++_entity_it;
+				--_component_count;
+			}
+			else if (_pool_count)
+			{
+				++_pool_it;
+				_component_count = _pool_it->dense.count() - 1;
+				_entity_it = _pool_it->dense.begin();
+				--_pool_count;
+			}
+			else if (!_pool_count)
+				++_pool_it;
+		
+			return *this; 
+		}
 
-	//		return result;
-	//	}
+		generic_component_iterator&
+		operator++(int)
+		{
+			auto result = *this;
+			
+			if (_component_count)
+			{
+				++_entity_it;
+				--_component_count;
+			}
+			else if (_pool_count)
+			{
+				++_pool_it;
+				_component_count = _pool_it->dense.count() - 1;
+				_entity_it = _pool_it->dense.begin();
+				--_pool_count;
+			}
+			else if (!_pool_count)
+				++_pool_it;
 
-	//	bool
-	//	operator==(const generic_component_iterator& other) const
-	//	{
-	//		return _pool_it == other._pool_it
-	//			&& _component_count == other._component_count;
-	//	}
+			return result;
+		}
 
-	//	bool
-	//	operator!=(const generic_component_iterator& other) const
-	//	{
-	//		return !operator==(other);
-	//	}
+		bool
+		operator==(const generic_component_iterator& other) const
+		{
+			return _pool_it == other._pool_it
+				&& _component_count == other._component_count;
+		}
 
-	//	ID
-	//	entity()
-	//	{
-	//		return _component_it->entity_id;
-	//	}
+		bool
+		operator!=(const generic_component_iterator& other) const
+		{
+			return !operator==(other);
+		}
 
-	//	value_type&
-	//	value()
-	//	{
-	//		return *_component_it;
-	//	}
+		cpprelude::usize
+		entity()
+		{
+			return *_entity_it;
+		}
 
-	//	const value_type&
-	//	value() const
-	//	{
-	//		return *_component_it;
-	//	}
-	//	
-	//	value_type&
-	//	operator*()
-	//	{
-	//		return *_component_it;
-	//	}
+		value_type&
+		value()
+		{
+			return  _pool_it->components[*_entity_it];
+		}
 
-	//	const value_type&
-	//	operator*() const
-	//	{
-	//		return *_component_it;
-	//	}
+		const value_type&
+		value() const
+		{
+			return  _pool_it->components[*_entity_it];
+		}
+		
+		const char*
+		type() const
+		{
+			return _pool_it->utils->type;
+		}
 
-	//	const char*
-	//	type() const
-	//	{
-	//		return _pool_it->utils->type;
-	//	}
-	//			
-	//};
+		generic_component
+		operator*()
+		{
+			return generic_component(_pool_it->components[*_entity_it],
+				                     *_entity_it,
+									 _pool_it->utils->type);
+		}
 
+		const generic_component
+		operator*() const
+		{
+			return generic_component(_pool_it->components[*_entity_it],
+					 				*_entity_it,
+									_pool_it->utils->type);
+
+		}
+			
+	};
 	
+
 	template<typename T>
 	struct component_iterator
 	{
@@ -219,21 +218,21 @@ namespace ecs
 		using data_type = T;
 
 		component_pool& _pool;
-		cpprelude::sequential_iterator<cpprelude::usize> _dense_it;
+		cpprelude::sequential_iterator<cpprelude::usize> _entity_it;
 		
 
-		component_iterator(component_pool& pool, const cpprelude::sequential_iterator<cpprelude::usize>& dense_it)
-			:_pool(pool), _dense_it(dense_it)
+		component_iterator(component_pool& pool, const cpprelude::sequential_iterator<cpprelude::usize>& entity_it)
+			:_pool(pool), _entity_it(entity_it)
 		{}
 	
 		component_iterator(const component_iterator& other)
-			:_pool(other._pool), _dense_it(other._dense_it)
+			:_pool(other._pool), _entity_it(other._entity_it)
 		{}
 
 		component_iterator&
 		operator++()
 		{
-			++_dense_it;
+			++_entity_it;
 			return *this;
 		}
 
@@ -241,14 +240,14 @@ namespace ecs
 		operator++(int)
 		{
 			auto result = *this;
-			++_dense_it;
+			++_entity_it;
 
 			return result;
 		}
 
 		bool operator==(const component_iterator& other) const
 		{
-			return _dense_it == other._dense_it;
+			return _entity_it == other._entity_it;
 		}
 
 		bool operator!=(const component_iterator& other)
@@ -259,41 +258,41 @@ namespace ecs
 		value_type&
 		value()
 		{
-			void* data = _pool.components[*_dense_it];
+			void* data = _pool.components[*_entity_it];
 			return *(static_cast<value_type*>(data));
 		}
 
 		const value_type&
 		value() const
 		{
-			void* data = _pool.components[*_dense_it];
+			void* data = _pool.components[*_entity_it];
 			return *(static_cast<value_type*>(data));
 		}
 
 		cpprelude::usize
 		entity()
 		{
-			return *_dense_it;
+			return *_entity_it;
 		}
 
 		Component<T>
 		operator*()
 		{
-			T* data = static_cast<value_type*>(_pool.components[*_dense_it]);
-			return Component<T>(data, *_dense_it);
+			//T* data = static_cast<value_type*>(_pool.components[*_dense_it]);
+			return Component<T>((T*)_pool.components[*_entity_it], *_entity_it);
 		}
 
-		Component<const T>&
+		Component<const T>
 		operator*() const
 		{
-			T* data = static_cast<value_type*>(_pool.components[*_dense_it]);
-			return Component<T>(data, *_dense_it);
+			//T* data = static_cast<value_type*>(_pool.components[*_dense_it]);
+			return Component<T>((T*)_pool.components[*_entity_it], *_entity_it);
 		}
 
 		value_type*
 		operator->()
 		{
-			void* data = _pool.components[*_dense_it];
+			void* data = _pool.components[*_entity_it];
 			return (static_cast<value_type*>(data));
 		}
 	};
@@ -435,7 +434,7 @@ namespace ecs
 			return iterator(_pools.end(), 0, _entity_id);
 		}
 
-	};
+	};*/
 
 	struct generic_component_view
 	{
@@ -458,8 +457,7 @@ namespace ecs
 			return iterator(_pools.end(), 0);
 		}
 	};
-	*/
-
+	
 	template<typename T>
 	struct component_view
 	{

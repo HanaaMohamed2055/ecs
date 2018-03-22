@@ -183,27 +183,79 @@ destroy_entt_single_component_entities(workbench* bench, cpprelude::usize limit)
 }
 
 void
-create_ecs__entities(workbench* bench, cpprelude::usize limit)
+create_ecs_2_comp_entities(workbench* bench, cpprelude::usize limit)
 {
 	ecs::World world;
 	bench->watch.start();
-
+	auto& entities = world.get_all_world_entities();
 
 	for (usize i = 0; i < limit; ++i)
 		world.create_entity<Position>();
+	
+	for (auto entity : entities)
+		world.add_property<u32>(entity);
 
 	bench->watch.stop();
 }
 
 void
-create_entt_small_entities(workbench* bench, cpprelude::usize limit)
+create_entt_2_comp_entities(workbench* bench, cpprelude::usize limit)
 {
 	entt::DefaultRegistry registry;
 	bench->watch.start();
 
+	auto entities = registry.view<Position>();
+
 	for (usize i = 0; i < limit; ++i)
 		registry.create<Position>();
 
+	for (auto entity : entities)
+		registry.assign<u32>(entity);
+
+	bench->watch.stop();
+}
+
+void
+create_ecs_5_comp_entities(workbench* bench, cpprelude::usize limit)
+{
+	ecs::World world;
+	bench->watch.start();
+	auto& entities = world.get_all_world_entities();
+
+	for (usize i = 0; i < limit; ++i)
+		world.create_entity<Position>();
+
+	for (auto entity : entities)
+	{
+		world.add_property<u32>(entity);
+		world.add_property<r32>(entity);
+		world.add_property<char>(entity);
+		world.add_property<r64>(entity);
+	}
+		
+
+	bench->watch.stop();
+}
+
+void
+create_entt_5_comp_entities(workbench* bench, cpprelude::usize limit)
+{
+	entt::DefaultRegistry registry;
+	bench->watch.start();
+
+	auto entities = registry.view<Position>();
+
+	for (usize i = 0; i < limit; ++i)
+		registry.create<Position>();
+
+	for (auto entity : entities)
+	{
+		registry.assign<u32>(entity);
+		registry.assign<r32>(entity);
+		registry.assign<char>(entity);
+		registry.assign<r64>(entity);
+	}
+		
 	bench->watch.stop();
 }
 
@@ -237,4 +289,13 @@ benchmark()
 	CPPRELUDE_BENCHMARK(destroy_ecs_single_component_entities, limit)
 	});
 	
+	compare_benchmark(std::cout, {
+	CPPRELUDE_BENCHMARK(create_entt_2_comp_entities, limit),
+	CPPRELUDE_BENCHMARK(create_ecs_2_comp_entities, limit)
+	});
+	
+	compare_benchmark(std::cout, {
+	CPPRELUDE_BENCHMARK(create_entt_5_comp_entities, limit),
+	CPPRELUDE_BENCHMARK(create_ecs_5_comp_entities, limit)
+	});
 }

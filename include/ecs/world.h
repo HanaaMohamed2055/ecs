@@ -255,8 +255,8 @@ namespace ecs
 		get(Entity e)
 		{	
 			const auto type = utility::get_type_identifier<T>();
-			const auto& pool = component_pools[type].components;
-			return *((T*)pool[e.id()]);
+			const auto& pool = component_pools[type];
+			return *((T*)pool[e.id()].data);
 		}
 
 		template<typename T>
@@ -264,8 +264,17 @@ namespace ecs
 		get(ID internal_entity)
 		{
 			const auto type = utility::get_type_identifier<T>();
-			const auto& pool = component_pools[type].components;
-			return *((T*)pool[internal_entity.id()]);
+			const auto& pool = component_pools[type];
+			return *((T*)pool[internal_entity.id()].data);
+		}
+
+		template<typename T>
+		T&
+		get(cpprelude::usize entity_index)
+		{
+			const auto type = utility::get_type_identifier<T>();
+			const auto& pool = component_pools[type];
+			return *((T*)pool[entity_index].data);
 		}
 
 		template<typename required, typename current>
@@ -273,8 +282,8 @@ namespace ecs
 		get_related_component(const Component<current>& component)
 		{
 			const auto type = utility::get_type_identifier<required>();
-			const auto& pool = component_pools[type].components;
-			return *((required*)pool[component.entity_id]);
+			const auto& pool = component_pools[type];
+			return *((required*)pool[component.entity_id].data);
 		}
 
 		template<typename T>
@@ -290,11 +299,14 @@ namespace ecs
 		API_ECS bool
 		entity_alive(Entity entity);
 
-		/*API_ECS entity_components_view
+		API_ECS entity_components_view
 		get_all_entity_properties(Entity e);
 
 		API_ECS entity_components_view
-		get_all_entity_properties(ID internal_entity);*/
+		get_all_entity_properties(ID internal_entity);
+
+		API_ECS entity_components_view
+		get_all_entity_properties(cpprelude::usize entity_index);
 
 		API_ECS generic_component_view
 		get_all_world_components();

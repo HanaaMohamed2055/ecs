@@ -14,23 +14,30 @@ namespace ecs
 		return entity.world == this && entities.has(entity.entity_id);
 	}
 	
-	//entity_components_view
-	//World::get_all_entity_properties(Entity e)
-	//{
-	//	if (entity_alive(e))
-	//	{
-	//		return entity_components_view(component_pools, e.id());
-	//	}
-	//}
+	entity_components_view
+	World::get_all_entity_properties(Entity e)
+	{
+		/*if (entity_alive(e))
+		{*/
+			return entity_components_view(component_pools, e.id());
+		//}
+	}
 
-	//entity_components_view
-	//World::get_all_entity_properties(ID internal_entity)
-	//{
-	//	/*if (entity_set.has(internal_entity))
-	//	{
-	//		return entity_components_view(component_pools, internal_entity.id());
-	//	}*/
-	//}
+	entity_components_view
+	World::get_all_entity_properties(ID internal_entity)
+	{
+		if (entities.has(internal_entity))
+		{
+			return entity_components_view(component_pools, internal_entity.id());
+		}
+	}
+
+	entity_components_view
+	World::get_all_entity_properties(cpprelude::usize entity_index)
+	{
+		return entity_components_view(component_pools, entity_index);
+	}
+
 
 	generic_component_view
 	World::get_all_world_components()

@@ -97,6 +97,14 @@ namespace ecs
 		}
 	};
 
+	// internal component describes how the component is stored inside the world pool
+	struct internal_component
+	{
+		void* data = nullptr;
+		cpprelude::usize entity_index;
+	};
+
+	// this is the component that acts a convenient wrapper for data that knows to which entity it belongs
 	template<typename T>
 	struct Component
 	{
@@ -105,6 +113,10 @@ namespace ecs
 		
 		Component(T* data_ptr, cpprelude::usize entity_index)
 			:data(data_ptr), entity_id(entity_index)
+		{}
+
+		Component(internal_component& c)
+			:data((T*)c.data), entity_id(c.entity_index)
 		{}
 
 		T*
@@ -132,6 +144,7 @@ namespace ecs
 		}
 	};
 
+	// generic component that knows its entity and type on iterating over all components in the system
 	struct generic_component
 	{
 		void* data = nullptr;
@@ -143,7 +156,16 @@ namespace ecs
 		{}
 	};
 
-	
+	// entity_component that has to know only its type
+	struct entity_component
+	{
+		void* data;
+		const char* type;
+
+		entity_component(void* data_ptr, const char* data_type)
+			:data(data_ptr), type(data_type)
+		{}
+	};
 
 	
 }

@@ -79,19 +79,27 @@ namespace ecs
 		using difference_type = cpprelude::isize;
 		using value_type = void*;
 
-		component_iterator _entity_it;
+		component_iterator _entity_it = nullptr;
 		cpprelude::sequential_iterator<component_pool> _pool_it;
 		cpprelude::usize _pool_count = 0;
-		cpprelude::usize _component_count = 0; // per pool
+		component_iterator _current_pool_end;
 
-		generic_component_iterator(cpprelude::sequential_iterator<component_pool> pool_it, cpprelude::usize pool_count)
-			:_pool_it(pool_it), _pool_count(pool_count)
+		generic_component_iterator(cpprelude::sequential_iterator<component_pool> pool_it, component_iterator entity_it, component_iterator end, cpprelude::usize pool_count)
+			:_pool_it(pool_it), _entity_it(entity_it), _current_pool_end(end), _pool_count(pool_count)
 		{
 			if (_pool_count)
-			{
 				--_pool_count;
-				_component_count = _pool_it->dense.count() - 1;
+			
+			while (_pool_count && _entity_it == _current_pool_end)
+			{
+				++_pool_it;
+				_current_pool_end = _pool_it->dense.end();
 				_entity_it = _pool_it->dense.begin();
+				--_pool_count;
+				if (_entity_it != _current_pool_end)
+					break;
+				if (!_pool_count && _entity_it == _current_pool_end)
+					++_pool_it;
 			}
 		}
 
@@ -99,62 +107,76 @@ namespace ecs
 			:_pool_it(other._pool_it), _pool_count(other._pool_count)
 		{
 			if (_pool_count)
-			{
 				--_pool_count;
-				_component_count = _pool_it->dense.count() - 1;
+
+			while (_pool_count && _entity_it == _current_pool_end)
+			{
+				++_pool_it;
+				_current_pool_end = _pool_it->dense.end();
 				_entity_it = _pool_it->dense.begin();
+				--_pool_count;
+				if (_entity_it != _current_pool_end)
+					break;
+				if (!_pool_count && _entity_it == _current_pool_end)
+					++_pool_it;
 			}
 		}
 
 		generic_component_iterator&
 		operator++()
 		{
-			if (_component_count)
+			++_entity_it;
+
+			if (_entity_it == _current_pool_end)
 			{
-				++_entity_it;
-				--_component_count;
+				while (_pool_count)
+				{
+					++_pool_it;
+					_current_pool_end = _pool_it->dense.end();
+					_entity_it = _pool_it->dense.begin();
+					--_pool_count;
+					if (_entity_it != _current_pool_end)
+						break;
+				}
 			}
-			else if (_pool_count)
-			{
+
+			if (!_pool_count && _entity_it == _current_pool_end)
 				++_pool_it;
-				_component_count = _pool_it->dense.count() - 1;
-				_entity_it = _pool_it->dense.begin();
-				--_pool_count;
-			}
-			else if (!_pool_count)
-				++_pool_it;
-		
-			return *this; 
+			
+			return *this;
 		}
 
 		generic_component_iterator&
 		operator++(int)
 		{
 			auto result = *this;
-			
-			if (_component_count)
-			{
-				++_entity_it;
-				--_component_count;
-			}
-			else if (_pool_count)
-			{
-				++_pool_it;
-				_component_count = _pool_it->dense.count() - 1;
-				_entity_it = _pool_it->dense.begin();
-				--_pool_count;
-			}
-			else if (!_pool_count)
-				++_pool_it;
 
+			++_entity_it;
+
+			if (_entity_it == _current_pool_end)
+			{
+				while (_pool_count)
+				{
+					++_pool_it;
+					_current_pool_end = _pool_it->dense.end();
+					_entity_it = _pool_it->dense.begin();
+					--_pool_count;
+					if (_entity_it != _current_pool_end)
+						break;
+				}
+			}
+
+			if (!_pool_count && _entity_it == _current_pool_end)
+				++_pool_it;
+		
 			return result;
 		}
 
 		bool
 		operator==(const generic_component_iterator& other) const
 		{
-			return _pool_it == other._pool_it
-				&& _component_count == other._component_count;
+			return _pool_count ? _entity_it == other._entity_it
+								: _pool_it == other._pool_it;
 		}
 
 		bool
@@ -201,7 +223,6 @@ namespace ecs
 			return generic_component(_pool_it->components[*_entity_it],
 					 				*_entity_it,
 									_pool_it->utils->type);
-
 		}
 			
 	};
@@ -448,13 +469,20 @@ namespace ecs
 		iterator
 		begin()
 		{
-			return iterator(_pools.begin(), _pools.count());
+			if (_pools.empty())
+				return iterator(_pools.end(), nullptr, nullptr, 0);
+			
+			return iterator(_pools.begin(),
+							_pools.begin()->dense.begin(),
+							_pools.begin()->dense.end(),
+							_pools.count());
+
 		}
 		
 		iterator
 		end()
 		{
-			return iterator(_pools.end(), 0);
+			return iterator(_pools.end(), nullptr, nullptr, 0);
 		}
 	};
 	

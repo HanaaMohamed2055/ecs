@@ -46,8 +46,8 @@ int main()
 		std::cout << world.get_related_component<u32>(c) << std::endl;
 	}
 
-	//world.kill_entity(e1);
-	//world.kill_entity(e2);
+	world.kill_entity(e1);
+	world.kill_entity(e2);
 
 	std::cout << std::endl;
 	auto e = world.create_entity();

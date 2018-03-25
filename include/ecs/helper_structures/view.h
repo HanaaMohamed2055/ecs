@@ -33,6 +33,7 @@ namespace ecs
 			{
 				sparse.expand_back(2 * (entity_index + 1), INVALID_PLACE);
 				managed.expand_back(2 * (entity_index + 1), false);
+				components.reserve(2 * (entity_index + 1));
 			}
 			sparse[entity_index] = components.count();
 			components.insert_back({ data_ptr, entity_index });

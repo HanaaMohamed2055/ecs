@@ -142,6 +142,19 @@ namespace ecs
 		{
 			return *data;
 		}
+
+		bool
+		operator==(const Component<T>& other)
+		{
+			return entity_id == other.entity_id
+				&& *data == *(other.data);
+		}
+
+		bool
+		operator!=(const Component<T>& other)
+		{
+			return !operator==(other)
+		}
 	};
 
 	// generic component that knows its entity and type on iterating over all components in the system

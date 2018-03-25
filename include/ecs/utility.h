@@ -2,6 +2,7 @@
 
 #include <atomic>
 
+
 #include <cpprelude/defines.h>
 #include <cpprelude/memory_context.h>
 
@@ -57,6 +58,56 @@ namespace utility
 				return type_number<>::type_ID<T>();
 			}
 		};
+
+
+		// implemented only the parts we need from struct tuple 
+	
+		template<typename ...Ts>
+		struct TupleTypes
+		{};
+
+		template< cpprelude::usize N, typename T>
+		struct TupleElement;
+
+		// base case
+		template <typename Head, typename... Ts>
+		struct TupleElement<0, TupleTypes<Head, Ts...>>
+		{
+			typedef Head type;
+		};
+
+		// recursive case
+		template <cpprelude::usize N, typename Head, typename ... Ts>
+		struct TupleElement<N, TupleTypes<Head, Ts...>>
+		{
+			typedef typename TupleElement<N - 1, TupleTypes<Ts...>>::type type;
+		};
+
+		template<typename ...Ts>
+		struct type_list
+		{
+			template<cpprelude::usize N>
+			using type = typename TupleElement<N, TupleTypes<Ts...>>::type;
+
+			constexpr cpprelude::usize
+			count() const
+			{
+				return sizeof...(Ts);
+			}
+		};
+
+		template<class TypeList, size_t... Is>
+		cpprelude::dynamic_array <cpprelude::usize> get_types_impl(std::index_sequence<Is...>)
+		{
+			return { utility::get_type_identifier<TypeList::type<Is>>()... };
+		}
+	}
+
+	template<class... Ts>
+	cpprelude::dynamic_array<cpprelude::usize> get_types()
+	{		
+		details::type_list<Ts...> types;
+		return details::get_types_impl<decltype(types)>(std::make_index_sequence<types.count()>{});
 	}
 	
 	template<typename T>

@@ -200,6 +200,12 @@ namespace ecs
 			return (type < component_pools.count() && component_pools[type]._context != nullptr);
 		}
 
+		inline bool
+		type_exists(cpprelude::usize type)
+		{
+			return (type < component_pools.count() && component_pools[type]._context != nullptr);
+		}
+		
 		template<typename T>
 		bool
 		has(Entity e)
@@ -224,6 +230,40 @@ namespace ecs
 			const auto& pool = component_pools[type];
 
 			return pool.has(internal_entity.id());
+		}
+
+		template<typename... Ts>
+		bool
+		has_all(Entity e)
+		{
+			if (!entity_alive(e))
+				return false;
+
+			auto types = utility::get_types_identifiers<Ts...>();
+			for (auto type : types)
+			{
+				if (!type_exists(type) || !component_pools[type].has(e.id()))
+					return false;
+			}
+
+			return true;
+		}
+
+		template<typename... Ts>
+		bool
+		has_all(ID internal_entity)
+		{
+			if (!entities.has(internal_entity))
+				return false;
+			
+			auto types = utility::get_types_identifiers<Ts...>();
+			for (auto type : types)
+			{
+				if (!type_exists(type) || !component_pools[type].has(e.id()))
+					return false;
+			}
+
+			return true;
 		}
 
 		template<typename T>

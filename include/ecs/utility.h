@@ -104,7 +104,7 @@ namespace utility
 	}
 
 	template<class... Ts>
-	cpprelude::dynamic_array<cpprelude::usize> get_types()
+	cpprelude::dynamic_array<cpprelude::usize> get_types_identifiers()
 	{		
 		details::type_list<Ts...> types;
 		return details::get_types_impl<decltype(types)>(std::make_index_sequence<types.count()>{});

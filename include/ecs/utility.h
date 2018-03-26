@@ -88,13 +88,14 @@ namespace utility
 			}
 		};
 
-		template<class TypeList, size_t... Is>
+		template<class TypeList, cpprelude::usize... Is>
 		cpprelude::dynamic_array<cpprelude::usize>
 		get_types_impl(std::index_sequence<Is...>)
 		{
 			return { utility::get_type_identifier<TypeList::type<Is>>()... };
 		}
 	}
+
 
 	template<class... Ts>
 	cpprelude::dynamic_array<cpprelude::usize>

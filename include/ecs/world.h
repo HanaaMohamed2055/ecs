@@ -17,8 +17,7 @@ namespace ecs
 		cpprelude::dynamic_array<component_pool> component_pools;
 		cpprelude::memory_context* _context;
 		
-
-
+		
 		World(cpprelude::memory_context* context = cpprelude::platform->global_memory)
 			:_context(context),
 			entities(context),
@@ -236,7 +235,7 @@ namespace ecs
 		}
 
 		// has_all for multiple properties
-		// still a bit slower than has
+		// still a lot slower than has<T>
 		template<typename... Ts>
 		bool
 		has_all(Entity e)
@@ -267,7 +266,6 @@ namespace ecs
 				if (!type_exists(type) || !component_pools[type].has(internal_entity.id()))
 					return false;
 			}
-
 			return true;
 		}
 
@@ -287,11 +285,11 @@ namespace ecs
 		void
 		remove_property(ID internal_entity)
 		{
-			if (!entities.has(internal_entity) || !type_exists<T>() || !has<T>(e))
+			if (!entities.has(internal_entity) || !type_exists<T>() || !has<T>(internal_entity))
 				return;
 
 			const auto type = utility::get_type_identifier<T>();
-			auto& pool = component_types[type];
+			auto& pool = component_pools[type];
 			pool.remove(internal_entity.id());
 		}
 

@@ -124,7 +124,7 @@ iterate_ecs_single_component_entities(workbench* bench, usize limit)
 	
 	for(auto p: view)
 	{
-		//world.has_all<Position>(p.entity_id);
+		world.has_all<Position>(p.entity_id);
 	}
 
 	bench->watch.stop();
@@ -143,7 +143,7 @@ iterate_entt_single_component_entities(workbench* bench, usize limit)
 
 	for (auto e : view)
 	{
-		//registry.has<Position>(e);
+		registry.has<Position>(e);
 	}
 
 	bench->watch.stop();
@@ -266,7 +266,7 @@ create_entt_5_comp_entities(workbench* bench, cpprelude::usize limit)
 void
 benchmark()
 {
-	usize limit = 100;
+	usize limit = 1000000;
 
 	compare_benchmark(std::cout, {
 	CPPRELUDE_BENCHMARK(create_entt_entities, limit),

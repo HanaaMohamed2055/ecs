@@ -8,7 +8,7 @@ namespace ecs
 {	
 	constexpr cpprelude::usize INVALID_PLACE = -1;
 
-	using _id_type = cpprelude::u64;
+	using _id_type = cpprelude::usize;
 	using _version_type = cpprelude::u32;
 
 	constexpr _id_type INVALID_ID = -1;
@@ -25,11 +25,11 @@ namespace ecs
 		ID()
 		{}
 
-		ID(cpprelude::u64 value)
+		ID(cpprelude::usize value)
 			:number(value)
 		{}
 
-		ID(cpprelude::u64 entity_id, cpprelude::u64 version)
+		ID(cpprelude::usize entity_id, cpprelude::usize version)
 		{
 			number = (entity_id & entity_mask) | ((version & version_mask) << 40);
 		}
@@ -109,14 +109,14 @@ namespace ecs
 	struct Component
 	{
 		T* data;
-		const cpprelude::usize entity_id;
+		const cpprelude::usize entity_index;
 		
-		Component(T* data_ptr, cpprelude::usize entity_index)
-			:data(data_ptr), entity_id(entity_index)
+		Component(T* data_ptr, cpprelude::usize index)
+			:data(data_ptr), entity_index(index)
 		{}
 
 		Component(internal_component& c)
-			:data((T*)c.data), entity_id(c.entity_index)
+			:data((T*)c.data), entity_index(c.entity_index)
 		{}
 
 		T*
@@ -161,11 +161,11 @@ namespace ecs
 	struct generic_component
 	{
 		void* data = nullptr;
-		const cpprelude::usize entity_id;
+		const cpprelude::usize entity_index;
 		const char* type;
 		
 		generic_component(void* data_ptr, cpprelude::usize id, const char* data_type)
-			:data(data_ptr), entity_id(id), type(data_type)
+			:data(data_ptr), entity_index(id), type(data_type)
 		{}
 	};
 

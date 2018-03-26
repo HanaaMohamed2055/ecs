@@ -52,8 +52,7 @@ namespace ecs
 		get_pool(cpprelude::memory_context* context = cpprelude::platform->global_memory)
 		{
 			cpprelude::usize type = utility::get_type_identifier<T>();
-			
-			// prealllocation at the beginning
+						
 			if (type >= component_pools.capacity())
 				component_pools.expand_back(type + 1);
 
@@ -184,8 +183,6 @@ namespace ecs
 			if (entities.has(internal_entity))
 			{
 				auto& pool = get_pool<T>();
-				
-				// registering component with the world and the entity 
 				pool.insert_at(internal_entity.id(), data, false);
 			}
 		}
@@ -211,8 +208,7 @@ namespace ecs
 			if (!entity_alive(e) || !type_exists<T>())
 				return false;
 			
-			const auto type = utility::get_type_identifier<T>();
-			const auto& pool = component_pools[type];
+			const auto& pool = get_pool<T>();
 			
 			return pool.has(e.id());
 		}
@@ -223,14 +219,13 @@ namespace ecs
 		{
 			if (!entities.has(internal_entity) || !type_exists<T>())
 				return false;
-
-			const auto type = utility::get_type_identifier<T>();
-			const auto& pool = component_pools[type];
-
+						
+			const auto& pool = get_pool<T>();
+			
 			return pool.has(internal_entity.id());
 		}
 
-		// has_all for multiple properties
+		// has_all for multiple properties - WIP
 		// still a lot slower than has<T>
 		template<typename... Ts>
 		bool
@@ -272,8 +267,7 @@ namespace ecs
 			if (!entity_alive(e) || !type_exists<T>() || !has<T>(e))
 				return;
 
-			const auto type = utility::get_type_identifier<T>();
-			auto& pool = component_types[type];
+			auto& pool = get_pool<T>();
 			pool.remove(e.id());
 		}
 
@@ -284,8 +278,7 @@ namespace ecs
 			if (!entities.has(internal_entity) || !type_exists<T>() || !has<T>(internal_entity))
 				return;
 
-			const auto type = utility::get_type_identifier<T>();
-			auto& pool = component_pools[type];
+			auto& pool = get_pool<T>();
 			pool.remove(internal_entity.id());
 		}
 
@@ -293,8 +286,7 @@ namespace ecs
 		T& 
 		get(Entity e)
 		{	
-			const auto type = utility::get_type_identifier<T>();
-			const auto& pool = component_pools[type];
+			const auto& pool = get_pool<T>();
 			return *((T*)pool[e.id()].data);
 		}
 
@@ -302,8 +294,7 @@ namespace ecs
 		T&
 		get(ID internal_entity)
 		{
-			const auto type = utility::get_type_identifier<T>();
-			const auto& pool = component_pools[type];
+			const auto& pool = get_pool<T>();
 			return *((T*)pool[internal_entity.id()].data);
 		}
 
@@ -311,18 +302,15 @@ namespace ecs
 		T&
 		get(cpprelude::usize entity_index)
 		{
-			const auto type = utility::get_type_identifier<T>();
-			const auto& pool = component_pools[type];
+			const auto& pool = get_pool<T>();
 			return *((T*)pool[entity_index].data);
 		}
 
-		template<typename required, typename current>
+		template<typename required, typename component>
 		required&
-		get_related_component(const Component<current>& component)
+		get_related_component(const component& other)
 		{
-			const auto type = utility::get_type_identifier<required>();
-			const auto& pool = component_pools[type];
-			return *((required*)pool[component.entity_id].data);
+			return get<required>(other.entity_index);
 		}
 
 		template<typename T>

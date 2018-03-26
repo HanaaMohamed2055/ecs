@@ -22,6 +22,7 @@ namespace ecs
 			auto pool_end = component_pools.end();
 			entity_components_iterator begin(component_pools.begin(), pool_end, e.id());
 			entity_components_iterator end(pool_end, pool_end, e.id());
+			
 			return view<entity_components_iterator>(begin, end);
 		}
 	}
@@ -34,6 +35,7 @@ namespace ecs
 			auto pool_end = component_pools.end();
 			entity_components_iterator begin(component_pools.begin(), pool_end, internal_entity.id());
 			entity_components_iterator end(pool_end, pool_end, internal_entity.id());
+			
 			return view<entity_components_iterator>(begin, end);
 		}
 	}
@@ -54,6 +56,7 @@ namespace ecs
 	{
 		generic_component_iterator begin(component_pools.begin(), component_pools.count());
 		generic_component_iterator end(component_pools.end(), 0);
+		
 		return view<generic_component_iterator>(begin, end);
 	}
 

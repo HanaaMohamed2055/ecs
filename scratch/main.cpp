@@ -58,7 +58,7 @@ int main()
 	//auto view = world.get_all_world_components();
 	//for (auto c : view)
 	//{
-	//	std::cout << c.entity_id << std::endl;
+	//	std::cout << c.entity_index << std::endl;
 	//	std::cout << c.type << std::endl;
 	//}
 	//std::cout << "--------------------------------------------\n";
@@ -70,11 +70,13 @@ int main()
 	//if (world.has_all<u32, r32, r64>(e1))
 	//	std::cout << "Yes!\n";
 
-	//if (!world.has_all<char, r32, r64>(e1))
+	//world.remove_property<u32>(e1);
+
+	//if (!world.has_all<u32, r32, r64>(e1))
 	//	std::cout << "No!\n";
 
-	//std::cout << world.has<u32>(e1) << std::endl;
-
+	//if (!world.has_all<char, r32, r64>(e1))
+	//	std::cout << "No!\n";
 }
 
 

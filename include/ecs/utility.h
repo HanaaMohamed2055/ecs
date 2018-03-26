@@ -61,7 +61,8 @@ namespace utility
 
 
 		// implemented only the parts we need from struct tuple 
-	
+		// 
+
 		template<typename ...Ts>
 		struct TupleTypes
 		{};

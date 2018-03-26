@@ -243,7 +243,7 @@ namespace ecs
 			for (auto type : types)
 			{
 				if (!type_exists(type) || !component_pools[type].has(e.id()))
-					return false;
+					return false; 
 			}
 
 			return true;
@@ -330,7 +330,7 @@ namespace ecs
 		component_view<T>
 		get_world_components()
 		{
-			return component_view<T>(get_pool<T>());
+			return component_view<T>(&get_pool<T>());
 		}
 			
 		API_ECS Entity
@@ -362,6 +362,7 @@ namespace ecs
 
 		//API_ECS void
 		//kill_entity(cpprelude::usize entity_index);
+
 		/*API_ECS void
 		clean_up();
 		

@@ -19,7 +19,7 @@ namespace ecs
 	{
 		/*if (entity_alive(e))
 		{*/
-			return entity_components_view(component_pools, e.id());
+			return entity_components_view(&component_pools, e.id());
 		//}
 	}
 
@@ -28,21 +28,21 @@ namespace ecs
 	{
 		if (entities.has(internal_entity))
 		{
-			return entity_components_view(component_pools, internal_entity.id());
+			return entity_components_view(&component_pools, internal_entity.id());
 		}
 	}
 
 	entity_components_view
 	World::get_all_entity_properties(cpprelude::usize entity_index)
 	{
-		return entity_components_view(component_pools, entity_index);
+		return entity_components_view(&component_pools, entity_index);
 	}
 
 
 	generic_component_view
 	World::get_all_world_components()
 	{
-		return generic_component_view(component_pools);
+		return generic_component_view(&component_pools);
 	}
 
 	entity_array&

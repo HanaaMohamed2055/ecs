@@ -6,10 +6,25 @@
 #include <ecs/helper_structures/view.h>
 #include <ecs/world.h>
 
-/////////////////////////////////////////////////////
-// the above will be placed in the details namespace
+struct Trial
+{
+	Trial(ecs::World& world)
+	{
+		view = world.get_world_components<u32>();
+	}
 
+	void
+	operate()
+	{
+		for (auto c : view)
+		{
+			std::cout << *c << std::endl;
+		}
+	}
 
+private:
+	ecs::component_view<u32> view;
+};
 
 
 
@@ -79,7 +94,6 @@ int main()
 
 	if (!world.has_all<char, r32, r64>(e1))
 		std::cout << "No!\n";
-
 }
 //benchmark();
 

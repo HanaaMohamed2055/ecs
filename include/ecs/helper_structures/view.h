@@ -435,27 +435,27 @@ namespace ecs
 			return _pool_it->utils->type;
 		}
 	};
-
+	
 	struct entity_components_view
 	{
 		using iterator = entity_components_iterator;
-		cpprelude::dynamic_array<component_pool>& _pools;
+		cpprelude::dynamic_array<component_pool>* _pools = nullptr;
 		cpprelude::usize _entity_id;
 
-		entity_components_view(cpprelude::dynamic_array<component_pool>& pools, _id_type entity_id)
+		entity_components_view(cpprelude::dynamic_array<component_pool>* pools, cpprelude::usize entity_id)
 			:_pools(pools), _entity_id(entity_id)
 		{}
 
 		iterator
 		begin()
 		{
-			return iterator(_pools.begin(), _pools.end(), _entity_id);
+			return iterator(_pools->begin(), _pools->end(), _entity_id);
 		}
 	
 		iterator
 		end()
 		{
-			return iterator(_pools.end(), _pools.end(), _entity_id);
+			return iterator(_pools->end(), _pools->end(), _entity_id);
 		}
 
 	};
@@ -471,29 +471,36 @@ namespace ecs
 		using reference = internal_component&;
 		using data_type = internal_component;
 
-		cpprelude::dynamic_array<component_pool>& _pools;
+		cpprelude::dynamic_array<component_pool>* _pools;
 		
-		generic_component_view(cpprelude::dynamic_array<component_pool>& pools)
+		generic_component_view(cpprelude::dynamic_array<component_pool>* pools = nullptr)
 			:_pools(pools)
 		{}
+
+		generic_component_view
+		operator=(const generic_component_view& other)
+		{
+			_pools = other._pools;
+			return *this;
+		}
 
 		iterator
 		begin()
 		{
-			if (_pools.empty())
-				return iterator(_pools.end(), nullptr, nullptr, 0);
+			if (_pools && _pools->empty())
+				return iterator(_pools->end(), nullptr, nullptr, 0);
 			
-			return iterator(_pools.begin(),
-							_pools.begin()->components.begin(),
-							_pools.begin()->components.end(),
-							_pools.count());
+			return iterator(_pools->begin(),
+							_pools->begin()->components.begin(),
+							_pools->begin()->components.end(),
+							_pools->count());
 
 		}
 		
 		iterator
 		end()
 		{
-			return iterator(_pools.end(), nullptr, nullptr, 0);
+			return iterator(_pools->end(), nullptr, nullptr, 0);
 		}
 	};
 	
@@ -502,22 +509,29 @@ namespace ecs
 	{
 		using iterator = component_iterator<T>;
 
-		component_pool& _pool;
+		component_pool* _pool;
 
-		component_view(component_pool& pool)
+		component_view(component_pool* pool = nullptr)
 			:_pool(pool)
 		{}
+
+		component_view
+		operator=(const component_pool& other)
+		{
+			_pool = other._pool;
+			return *this;
+		}
 
 		iterator
 		begin()
 		{
-			return iterator(_pool.components.begin());
+			return iterator(_pool->components.begin());
 		}
 
 		iterator
 		end()
 		{
-			return iterator(_pool.components.end());
+			return iterator(_pool->components.end());
 		}
 	};
 

@@ -10,15 +10,6 @@ namespace utility
 {
 	namespace details
 	{
-		struct hash_char
-		{
-			inline cpprelude::usize
-			operator()(const char* ptr) const
-			{
-				return cpprelude::hash_bytes(ptr, 8);
-			}
-		};
-		
 		template<typename ...>
 		struct type_number
 		{
@@ -35,6 +26,7 @@ namespace utility
 		template<typename... types>
 		std::atomic<cpprelude::usize> type_number<types...>::number{};
 
+		
 		const cpprelude::u64 FRONT_SIZE = sizeof("utility::details::type_helper<") - 1u;
 		const cpprelude::u64 BACK_SIZE = sizeof(">::get_type_name") - 1u;
 				
@@ -58,10 +50,9 @@ namespace utility
 				return type_number<>::type_ID<T>();
 			}
 		};
-
-
+		
 		// implemented only the parts we need from struct tuple 
-		// 
+		// for iterating on Template types
 
 		template<typename ...Ts>
 		struct TupleTypes
@@ -98,14 +89,16 @@ namespace utility
 		};
 
 		template<class TypeList, size_t... Is>
-		cpprelude::dynamic_array <cpprelude::usize> get_types_impl(std::index_sequence<Is...>)
+		cpprelude::dynamic_array<cpprelude::usize>
+		get_types_impl(std::index_sequence<Is...>)
 		{
 			return { utility::get_type_identifier<TypeList::type<Is>>()... };
 		}
 	}
 
 	template<class... Ts>
-	cpprelude::dynamic_array<cpprelude::usize> get_types_identifiers()
+	cpprelude::dynamic_array<cpprelude::usize>
+	get_types_identifiers()
 	{		
 		details::type_list<Ts...> types;
 		return details::get_types_impl<decltype(types)>(std::make_index_sequence<types.count()>{});

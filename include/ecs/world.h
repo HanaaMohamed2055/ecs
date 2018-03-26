@@ -1,11 +1,12 @@
 #pragma once
 
-#include <cpprelude/hash_array.h>
+#include <cpprelude/queue_array.h>
 
 #include <ecs/helper_structures/view.h>
 #include <ecs/api.h>
 #include <ecs/utility.h>
 #include <ecs/helper_structures/entity_array.h>
+
 
 namespace ecs
 {	
@@ -15,7 +16,9 @@ namespace ecs
 		entity_array entities ;
 		cpprelude::dynamic_array<component_pool> component_pools;
 		cpprelude::memory_context* _context;
-	
+		
+
+
 		World(cpprelude::memory_context* context = cpprelude::platform->global_memory)
 			:_context(context),
 			entities(context),
@@ -232,6 +235,8 @@ namespace ecs
 			return pool.has(internal_entity.id());
 		}
 
+		// has_all for multiple properties
+		// still a bit slower than has
 		template<typename... Ts>
 		bool
 		has_all(Entity e)
@@ -259,7 +264,7 @@ namespace ecs
 			auto types = utility::get_types_identifiers<Ts...>();
 			for (auto type : types)
 			{
-				if (!type_exists(type) || !component_pools[type].has(e.id()))
+				if (!type_exists(type) || !component_pools[type].has(internal_entity.id()))
 					return false;
 			}
 

@@ -1,5 +1,4 @@
 # pragma once
-#include <cpprelude/iterator.h>
 #include <cpprelude/dynamic_array.h>
 
 #include <ecs/elements.h>

@@ -1,16 +1,12 @@
 #pragma once
 
-#include <cpprelude/queue_array.h>
-
 #include <ecs/helper_structures/view.h>
 #include <ecs/api.h>
 #include <ecs/utility.h>
 #include <ecs/helper_structures/entity_array.h>
 
-
 namespace ecs
-{	
-	
+{		
 	struct World
 	{
 		entity_array entities ;

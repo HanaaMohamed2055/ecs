@@ -15,8 +15,7 @@ namespace ecs
 		cpprelude::usize _pool_count = 0;
 		component_iterator _component_it = nullptr;
 		component_iterator _current_pool_end = nullptr;
-
-
+		
 		generic_component_iterator(cpprelude::sequential_iterator<component_pool> pool_it, cpprelude::usize pool_count)
 			:_pool_it(pool_it), _pool_count(pool_count)
 		{

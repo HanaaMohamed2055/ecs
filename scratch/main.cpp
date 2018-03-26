@@ -5,34 +5,13 @@
 #include <ecs/helper_structures/view.h>
 #include <ecs/world.h>
 
-struct Trial
-{
-	Trial(ecs::World& world)
-	{
-		view = world.get_world_components<u32>();
-	}
-
-	void
-	operate()
-	{
-		for (auto c : view)
-		{
-			std::cout << *c << std::endl;
-		}
-	}
-
-private:
-	ecs::component_view<u32> view;
-};
-
-
 
 
 int main()
 {
 	//benchmark();
 	ecs::World world;
-	auto view = world.get_all_world_components();
+
 
 	auto e1 = world.create_entity();
 	auto e2 = world.create_entity();
@@ -78,12 +57,14 @@ int main()
 		std::cout << *c << std::endl;
 
 	std::cout << "------------------------------------------\n";
+	auto view = world.get_all_world_components();
 	for (auto c : view)
 	{
 		std::cout << c.entity_id << std::endl;
 		std::cout << c.type << std::endl;
 	}
-	
+	std::cout << "--------------------------------------------\n";
+
 	auto entity_properties = world.get_all_entity_properties(e1);
 	for (auto w : entity_properties)
 		std::cout << w.type << std::endl;
@@ -95,11 +76,6 @@ int main()
 		std::cout << "No!\n";
 
 	std::cout << world.has<u32>(e1) << std::endl;
-
-	//utility::details::entity_type_tuple<u32> et (0) ;
-	//world.remove_property<decltype(et)::type>(et.entity_index);
-	//
-	//std::cout << world.has<u32>(e1) << std::endl;
 
 }
 

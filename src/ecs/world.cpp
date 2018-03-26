@@ -14,35 +14,47 @@ namespace ecs
 		return entity.world == this && entities.has(entity.entity_id);
 	}
 	
-	entity_components_view
+	view<entity_components_iterator>
 	World::get_all_entity_properties(Entity e)
 	{
-		/*if (entity_alive(e))
-		{*/
-			return entity_components_view(&component_pools, e.id());
-		//}
+		if (entity_alive(e))
+		{
+			auto pool_end = component_pools.end();
+			entity_components_iterator begin(component_pools.begin(), pool_end, e.id());
+			entity_components_iterator end(pool_end, pool_end, e.id());
+			return view<entity_components_iterator>(begin, end);
+		}
 	}
 
-	entity_components_view
+	view<entity_components_iterator>
 	World::get_all_entity_properties(ID internal_entity)
 	{
 		if (entities.has(internal_entity))
 		{
-			return entity_components_view(&component_pools, internal_entity.id());
+			auto pool_end = component_pools.end();
+			entity_components_iterator begin(component_pools.begin(), pool_end, internal_entity.id());
+			entity_components_iterator end(pool_end, pool_end, internal_entity.id());
+			return view<entity_components_iterator>(begin, end);
 		}
 	}
 
-	entity_components_view
+	view<entity_components_iterator>
 	World::get_all_entity_properties(cpprelude::usize entity_index)
 	{
-		return entity_components_view(&component_pools, entity_index);
+		auto pool_end = component_pools.end();
+		entity_components_iterator begin(component_pools.begin(), pool_end, entity_index);
+		entity_components_iterator end(pool_end, pool_end, entity_index);
+
+		return view<entity_components_iterator>(begin, end);
 	}
 
 
-	generic_component_view
+	view<generic_component_iterator>
 	World::get_all_world_components()
 	{
-		return generic_component_view(&component_pools);
+		generic_component_iterator begin(component_pools.begin(), component_pools.count());
+		generic_component_iterator end(component_pools.end(), 0);
+		return view<generic_component_iterator>(begin, end);
 	}
 
 	entity_array&

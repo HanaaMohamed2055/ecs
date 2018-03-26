@@ -124,7 +124,7 @@ iterate_ecs_single_component_entities(workbench* bench, usize limit)
 	
 	for(auto p: view)
 	{
-		world.has_all<Position>(p.entity_id);
+		world.has<Position>(p.entity_id);
 	}
 
 	bench->watch.stop();

@@ -330,10 +330,11 @@ namespace ecs
 		}
 
 		template<typename T>
-		component_view<T>
+		view<component_iterator<T>>
 		get_world_components()
 		{
-			return component_view<T>(&get_pool<T>());
+			auto& pool = get_pool<T>();
+			return view<component_iterator<T>>(pool.components.begin(), pool.components.end());
 		}
 			
 		API_ECS Entity
@@ -342,16 +343,16 @@ namespace ecs
 		API_ECS bool
 		entity_alive(Entity entity);
 
-		API_ECS entity_components_view
+		API_ECS view<entity_components_iterator>
 		get_all_entity_properties(Entity e);
 
-		API_ECS entity_components_view
+		API_ECS view<entity_components_iterator>
 		get_all_entity_properties(ID internal_entity);
 
-		API_ECS entity_components_view
+		API_ECS view<entity_components_iterator>
 		get_all_entity_properties(cpprelude::usize entity_index);
 
-		API_ECS generic_component_view
+		API_ECS view<generic_component_iterator>
 		get_all_world_components();
 				
 		API_ECS entity_array&

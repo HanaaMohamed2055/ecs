@@ -105,13 +105,16 @@ namespace ecs
 		component_iterator _current_pool_end = nullptr;
 
 
-		generic_component_iterator(cpprelude::sequential_iterator<component_pool> pool_it, 
-									component_iterator component_it, component_iterator end, cpprelude::usize pool_count)
-			:_pool_it(pool_it), _component_it(component_it), _current_pool_end(end), _pool_count(pool_count)
+		generic_component_iterator(cpprelude::sequential_iterator<component_pool> pool_it, cpprelude::usize pool_count)
+			:_pool_it(pool_it), _pool_count(pool_count)
 		{
 			if (_pool_count)
+			{
+				_component_it = _pool_it->components.begin();
+				_current_pool_end = _pool_it->components.end();
 				--_pool_count;
-			
+			}
+							
 			while (_pool_count && _component_it == _current_pool_end)
 			{
 				++_pool_it;
@@ -128,25 +131,8 @@ namespace ecs
 		}
 
 		generic_component_iterator(const generic_component_iterator& other)
-			:_pool_it(other._pool_it), _pool_count(other._pool_count)
-		{
-			if (_pool_count)
-				--_pool_count;
-
-			while (_pool_count && _component_it == _current_pool_end)
-			{
-				++_pool_it;
-				_current_pool_end = _pool_it->components.end();
-				_component_it = _pool_it->components.begin();
-				--_pool_count;
-				
-				if (_component_it != _current_pool_end)
-					break;
-				
-				if (!_pool_count && _component_it == _current_pool_end)
-					++_pool_it;
-			}
-		}
+			:_pool_it(other._pool_it), _pool_count(other._pool_count), _component_it(other._component_it), _current_pool_end(other._current_pool_end)
+		{}
 
 		generic_component_iterator&
 		operator++()
@@ -434,86 +420,14 @@ namespace ecs
 		}
 	};
 	
-	struct entity_components_view
-	{
-		using iterator = entity_components_iterator;
 		
+	template<typename iterator>
+	struct view
+	{
 		iterator _begin;
 		iterator _end;
 
-		cpprelude::usize _entity_id;
-
-		entity_components_view(iterator begin, iterator end, cpprelude::usize entity_id)
-			:_begin(begin), _end(end), _entity_id(entity_id)
-		{}
-
-		iterator
-		begin()
-		{
-			return _begin;
-		}
-	
-		iterator
-		end()
-		{
-			return _end;
-		}
-
-	};
-
-	struct generic_component_view
-	{
-		using iterator = generic_component_iterator;
-
-		using iterator_category = std::forward_iterator_tag;
-		using value_type = internal_component;
-		using difference_type = cpprelude::isize;
-		using pointer = internal_component*;
-		using reference = internal_component&;
-		using data_type = internal_component;
-
-		cpprelude::dynamic_array<component_pool>* _pools;
-		
-		generic_component_view(cpprelude::dynamic_array<component_pool>* pools = nullptr)
-			:_pools(pools)
-		{}
-
-		generic_component_view
-		operator=(const generic_component_view& other)
-		{
-			_pools = other._pools;
-			return *this;
-		}
-
-		iterator
-		begin()
-		{
-			if (_pools && _pools->empty())
-				return iterator(_pools->end(), nullptr, nullptr, 0);
-			
-			return iterator(_pools->begin(),
-							_pools->begin()->components.begin(),
-							_pools->begin()->components.end(),
-							_pools->count());
-
-		}
-		
-		iterator
-		end()
-		{
-			return iterator(_pools->end(), nullptr, nullptr, 0);
-		}
-	};
-	
-	template<typename T>
-	struct component_view
-	{
-		using iterator = component_iterator<T>;
-		
-		iterator _begin;
-		iterator _end;
-
-		component_view(iterator begin, iterator end)
+		view(iterator begin, iterator end)
 			:_begin(begin), _end(end)
 		{}
 		

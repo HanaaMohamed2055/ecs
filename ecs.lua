@@ -1,6 +1,9 @@
 project "ecs"
 	kind "SharedLib"
 	language "C++"
+	targetdir (bin_path .. "/%{cfg.platform}/%{cfg.buildcfg}/")
+	location (build_path .. "/ecs/")
+
 
 	files {"include/**.h", "src/**.cpp"}
 
@@ -9,10 +12,15 @@ project "ecs"
 		cpprelude_path .. "/include/"
 	}
 
+	links {"cpprelude"}
+	
 	if os.istarget("linux") then
 
 		buildoptions {"-std=c++14", "-Wall", "-fno-rtti", "-fno-exceptions"}
 		linkoptions {"-pthread"}
+
+		filter "configurations:debug"
+			linkoptions {"-rdynamic"}
 
 	elseif os.istarget("windows") then
 
@@ -25,11 +33,12 @@ project "ecs"
 
 
 	filter "configurations:debug"
-		defines "DEBUG"
+		targetsuffix "d"
+		defines {"DEBUG", "ECS_DLL"}
 		symbols "On"
 
 	filter "configurations:release"
-		defines "NDEBUG"
+		defines {"NDEBUG", "ECS_DLL"}
 		optimize "On"
 
 	filter "platforms:x86"

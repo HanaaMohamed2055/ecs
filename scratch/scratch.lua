@@ -1,17 +1,20 @@
+local entt_path = "deps/entt"
+
 project "scratch"
 	kind "ConsoleApp"
 	language "C++"
 	targetdir (bin_path .. "/%{cfg.platform}/%{cfg.buildcfg}/")
 	location (build_path .. "/scratch/")
 
-	files {"**.cpp"}
+	files {"**.cpp", "**.h"}
 
 	includedirs {
 		ecs_path .. "/include",
 		cpprelude_path .. "/include",
+		entt_path .. "/src"
 	}
 
-	links {"cpprelude"}
+	links {"cpprelude", "ecs"}
 
 	if os.istarget("linux") then
 

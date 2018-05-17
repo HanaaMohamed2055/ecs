@@ -14,7 +14,7 @@ project "unittest"
 		catch_path .. "/single_include/"
 	}
 
-	links {"cpprelude"}
+	links {"cpprelude", "ecs"}
 
 	if os.istarget("linux") then
 
